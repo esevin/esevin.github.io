@@ -25,6 +25,7 @@
         }
         .scale-toggle.active {
             background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white !important;
         }
     </style>
 </head>
@@ -38,10 +39,10 @@
         <!-- Scale Selection -->
         <div class="mb-8 flex justify-center">
             <div class="bg-gray-100 p-1 rounded-lg flex">
-                <button id="three-point-btn" class="scale-toggle px-6 py-3 rounded-md text-sm font-medium transition-all duration-300 bg-white text-gray-700 shadow-sm">
+                <button id="three-point-btn" class="scale-toggle active px-6 py-3 rounded-md text-sm font-medium">
                     3-Point Scale (Yes/No/Not Sure)
                 </button>
-                <button id="five-point-btn" class="scale-toggle px-6 py-3 rounded-md text-sm font-medium transition-all duration-300 text-gray-700">
+                <button id="five-point-btn" class="scale-toggle px-6 py-3 rounded-md text-sm font-medium text-gray-700">
                     5-Point Likert Scale
                 </button>
             </div>
@@ -170,16 +171,14 @@
             const threePointBtn = document.getElementById('three-point-btn');
             const fivePointBtn = document.getElementById('five-point-btn');
             
+            // Reset both buttons
+            threePointBtn.classList.remove('active');
+            fivePointBtn.classList.remove('active');
+            
             if (currentScale === 'three-point') {
-                threePointBtn.classList.add('active', 'text-white', 'shadow-md');
-                threePointBtn.classList.remove('bg-white', 'text-gray-700', 'shadow-sm');
-                fivePointBtn.classList.remove('active', 'text-white', 'shadow-md');
-                fivePointBtn.classList.add('text-gray-700');
+                threePointBtn.classList.add('active');
             } else {
-                fivePointBtn.classList.add('active', 'text-white', 'shadow-md');
-                fivePointBtn.classList.remove('text-gray-700');
-                threePointBtn.classList.remove('active', 'text-white', 'shadow-md');
-                threePointBtn.classList.add('bg-white', 'text-gray-700', 'shadow-sm');
+                fivePointBtn.classList.add('active');
             }
         }
 
@@ -579,4 +578,59 @@
                             ${weightedResults.strongly_agree.toFixed(1)}%
                         </span>
                     </div>
-                    
+                    <div class="flex justify-between items-center">
+                        <span class="text-green-600 font-medium">Somewhat Agree:</span>
+                        <span class="font-mono text-sm font-bold text-green-600">
+                            ${weightedResults.somewhat_agree.toFixed(1)}%
+                        </span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-700 font-medium">Neutral:</span>
+                        <span class="font-mono text-sm font-bold text-gray-700">
+                            ${weightedResults.neutral.toFixed(1)}%
+                        </span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-red-600 font-medium">Somewhat Disagree:</span>
+                        <span class="font-mono text-sm font-bold text-red-600">
+                            ${weightedResults.somewhat_disagree.toFixed(1)}%
+                        </span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-red-700 font-medium">Strongly Disagree:</span>
+                        <span class="font-mono text-sm font-bold text-red-700">
+                            ${weightedResults.strongly_disagree.toFixed(1)}%
+                        </span>
+                    </div>
+                `;
+            }
+        }
+
+        function render() {
+            renderDemographics();
+            renderResponses();
+            renderWeights();
+            renderResults();
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            // Scale toggle buttons
+            document.getElementById('three-point-btn').addEventListener('click', function() {
+                switchScale('three-point');
+            });
+            
+            document.getElementById('five-point-btn').addEventListener('click', function() {
+                switchScale('five-point');
+            });
+            
+            // Add demographic button
+            document.getElementById('add-demographic-btn').addEventListener('click', addDemographic);
+            
+            // Initial render
+            updateScaleButtons();
+            render();
+        });
+    </script>
+</body>
+</html>
