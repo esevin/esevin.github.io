@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Public Opinion Weighting Calculator</title>
+    <title>Dual Scale Opinion Weighting Calculator</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .fade-in {
@@ -17,16 +17,37 @@
             transform: translateY(-2px);
             transition: transform 0.2s ease;
         }
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .scale-toggle {
+            transition: all 0.3s ease;
+        }
+        .scale-toggle.active {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
-    <div class="max-w-6xl mx-auto p-6 bg-white my-8 rounded-lg shadow-lg">
-        <div class="mb-8 text-center">
-            <h1 class="text-4xl font-bold text-gray-900 mb-3">Public Opinion Weighting Calculator</h1>
-            <p class="text-lg text-gray-600">Adjust survey data to match population demographics for more accurate results.</p>
+    <div class="max-w-7xl mx-auto p-6 bg-white my-8 rounded-lg shadow-lg">
+        <div class="mb-8 text-center gradient-bg text-white p-8 rounded-lg">
+            <h1 class="text-4xl font-bold mb-3">Dual Scale Opinion Weighting Calculator</h1>
+            <p class="text-lg opacity-90">Choose between Yes/No/Not Sure or 5-point Likert scale for survey weighting</p>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- Scale Selection -->
+        <div class="mb-8 flex justify-center">
+            <div class="bg-gray-100 p-1 rounded-lg flex">
+                <button id="three-point-btn" class="scale-toggle px-6 py-3 rounded-md text-sm font-medium transition-all duration-300 bg-white text-gray-700 shadow-sm">
+                    3-Point Scale (Yes/No/Not Sure)
+                </button>
+                <button id="five-point-btn" class="scale-toggle px-6 py-3 rounded-md text-sm font-medium transition-all duration-300 text-gray-700">
+                    5-Point Likert Scale
+                </button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
             <!-- Demographics Section -->
             <div class="space-y-6">
                 <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 hover-lift">
@@ -65,7 +86,7 @@
                         <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
                         </svg>
-                        Opinion Responses by Group
+                        <span id="responses-title">Opinion Responses by Group</span>
                     </h2>
                     
                     <div id="responses-container" class="space-y-4">
@@ -95,33 +116,71 @@
         <div class="mt-8 bg-gray-50 border border-gray-200 rounded-lg p-6">
             <h3 class="text-lg font-semibold text-gray-900 mb-3">How to Use This Calculator</h3>
             <div class="text-sm text-gray-600 space-y-2">
-                <p><strong>1. Demographics:</strong> Enter your demographic categories and their representation in both the true population and your sample.</p>
-                <p><strong>2. Responses:</strong> Enter the opinion percentages for each demographic group from your survey.</p>
-                <p><strong>3. Weights:</strong> The calculator automatically computes weights (Population % ÷ Sample %) for each group.</p>
-                <p><strong>4. Results:</strong> Compare unweighted (raw) results with weighted results that adjust for demographic imbalances.</p>
+                <p><strong>1. Choose Scale:</strong> Select between 3-point (Yes/No/Not Sure) or 5-point Likert scale.</p>
+                <p><strong>2. Demographics:</strong> Enter your demographic categories and their representation in both the true population and your sample.</p>
+                <p><strong>3. Responses:</strong> Enter the opinion percentages for each demographic group from your survey.</p>
+                <p><strong>4. Weights:</strong> The calculator automatically computes weights (Population % ÷ Sample %) for each group.</p>
+                <p><strong>5. Results:</strong> Compare unweighted (raw) results with weighted results that adjust for demographic imbalances.</p>
             </div>
         </div>
     </div>
 
     <script>
         // Application state
+        let currentScale = 'three-point'; // 'three-point' or 'five-point'
+        
         let demographics = [
             { id: 1, category: 'Age 18-34', population: 30, sample: 25 },
             { id: 2, category: 'Age 35-54', population: 35, sample: 40 },
             { id: 3, category: 'Age 55+', population: 35, sample: 35 }
         ];
         
-        let responses = [
-            { id: 1, category: 'Age 18-34', favorable: 60, unfavorable: 35, neutral: 5 },
-            { id: 2, category: 'Age 35-54', favorable: 45, unfavorable: 50, neutral: 5 },
-            { id: 3, category: 'Age 55+', favorable: 40, unfavorable: 55, neutral: 5 }
+        // Separate response datasets for each scale
+        let threePointResponses = [
+            { id: 1, category: 'Age 18-34', yes: 65, no: 25, not_sure: 10 },
+            { id: 2, category: 'Age 35-54', yes: 50, no: 40, not_sure: 10 },
+            { id: 3, category: 'Age 55+', yes: 40, no: 50, not_sure: 10 }
+        ];
+
+        let fivePointResponses = [
+            { id: 1, category: 'Age 18-34', strongly_agree: 25, somewhat_agree: 30, neutral: 15, somewhat_disagree: 20, strongly_disagree: 10 },
+            { id: 2, category: 'Age 35-54', strongly_agree: 15, somewhat_agree: 25, neutral: 20, somewhat_disagree: 25, strongly_disagree: 15 },
+            { id: 3, category: 'Age 55+', strongly_agree: 12, somewhat_agree: 23, neutral: 15, somewhat_disagree: 30, strongly_disagree: 20 }
         ];
 
         let nextId = 4;
 
+        // Get current responses based on selected scale
+        function getCurrentResponses() {
+            return currentScale === 'three-point' ? threePointResponses : fivePointResponses;
+        }
+
         // Utility functions
         function getNextId() {
             return nextId++;
+        }
+
+        function switchScale(scale) {
+            currentScale = scale;
+            updateScaleButtons();
+            render();
+        }
+
+        function updateScaleButtons() {
+            const threePointBtn = document.getElementById('three-point-btn');
+            const fivePointBtn = document.getElementById('five-point-btn');
+            
+            if (currentScale === 'three-point') {
+                threePointBtn.classList.add('active', 'text-white', 'shadow-md');
+                threePointBtn.classList.remove('bg-white', 'text-gray-700', 'shadow-sm');
+                fivePointBtn.classList.remove('active', 'text-white', 'shadow-md');
+                fivePointBtn.classList.add('text-gray-700');
+            } else {
+                fivePointBtn.classList.add('active', 'text-white', 'shadow-md');
+                fivePointBtn.classList.remove('text-gray-700');
+                threePointBtn.classList.remove('active', 'text-white', 'shadow-md');
+                threePointBtn.classList.add('bg-white', 'text-gray-700', 'shadow-sm');
+            }
         }
 
         function updateDemographic(id, field, value) {
@@ -129,14 +188,18 @@
             if (demo) {
                 demo[field] = field === 'category' ? value : (parseFloat(value) || 0);
                 if (field === 'category') {
-                    const response = responses.find(r => r.id === id);
-                    if (response) response.category = value;
+                    // Update category in both response arrays
+                    const threeResponse = threePointResponses.find(r => r.id === id);
+                    const fiveResponse = fivePointResponses.find(r => r.id === id);
+                    if (threeResponse) threeResponse.category = value;
+                    if (fiveResponse) fiveResponse.category = value;
                 }
                 render();
             }
         }
 
         function updateResponse(id, field, value) {
+            const responses = getCurrentResponses();
             const response = responses.find(r => r.id === id);
             if (response) {
                 response[field] = parseFloat(value) || 0;
@@ -147,13 +210,18 @@
         function addDemographic() {
             const newId = getNextId();
             demographics.push({ id: newId, category: '', population: 0, sample: 0 });
-            responses.push({ id: newId, category: '', favorable: 0, unfavorable: 0, neutral: 0 });
+            
+            // Add to both response arrays
+            threePointResponses.push({ id: newId, category: '', yes: 0, no: 0, not_sure: 0 });
+            fivePointResponses.push({ id: newId, category: '', strongly_agree: 0, somewhat_agree: 0, neutral: 0, somewhat_disagree: 0, strongly_disagree: 0 });
+            
             render();
         }
 
         function removeDemographic(id) {
             demographics = demographics.filter(d => d.id !== id);
-            responses = responses.filter(r => r.id !== id);
+            threePointResponses = threePointResponses.filter(r => r.id !== id);
+            fivePointResponses = fivePointResponses.filter(r => r.id !== id);
             render();
         }
 
@@ -166,54 +234,72 @@
 
         function calculateWeightedResults() {
             const weights = calculateWeights();
-            let totalWeightedFavorable = 0;
-            let totalWeightedUnfavorable = 0;
-            let totalWeightedNeutral = 0;
+            const responses = getCurrentResponses();
+            const fields = currentScale === 'three-point' 
+                ? ['yes', 'no', 'not_sure']
+                : ['strongly_agree', 'somewhat_agree', 'neutral', 'somewhat_disagree', 'strongly_disagree'];
+            
+            let totals = {};
             let totalWeight = 0;
+
+            // Initialize totals
+            fields.forEach(field => totals[field] = 0);
 
             weights.forEach(weight => {
                 const response = responses.find(r => r.id === weight.id);
                 if (response) {
                     const w = weight.weight;
-                    totalWeightedFavorable += (response.favorable / 100) * w;
-                    totalWeightedUnfavorable += (response.unfavorable / 100) * w;
-                    totalWeightedNeutral += (response.neutral / 100) * w;
+                    fields.forEach(field => {
+                        totals[field] += (response[field] / 100) * w;
+                    });
                     totalWeight += w;
                 }
             });
 
-            if (totalWeight === 0) return { favorable: 0, unfavorable: 0, neutral: 0 };
+            if (totalWeight === 0) {
+                const result = {};
+                fields.forEach(field => result[field] = 0);
+                return result;
+            }
 
-            return {
-                favorable: (totalWeightedFavorable / totalWeight) * 100,
-                unfavorable: (totalWeightedUnfavorable / totalWeight) * 100,
-                neutral: (totalWeightedNeutral / totalWeight) * 100
-            };
+            const result = {};
+            fields.forEach(field => {
+                result[field] = (totals[field] / totalWeight) * 100;
+            });
+            return result;
         }
 
         function calculateUnweightedResults() {
             const totalSample = demographics.reduce((sum, d) => sum + d.sample, 0);
-            if (totalSample === 0) return { favorable: 0, unfavorable: 0, neutral: 0 };
+            const responses = getCurrentResponses();
+            const fields = currentScale === 'three-point' 
+                ? ['yes', 'no', 'not_sure']
+                : ['strongly_agree', 'somewhat_agree', 'neutral', 'somewhat_disagree', 'strongly_disagree'];
+            
+            if (totalSample === 0) {
+                const result = {};
+                fields.forEach(field => result[field] = 0);
+                return result;
+            }
 
-            let totalFavorable = 0;
-            let totalUnfavorable = 0;
-            let totalNeutral = 0;
+            let totals = {};
+            fields.forEach(field => totals[field] = 0);
 
             responses.forEach(response => {
                 const demo = demographics.find(d => d.id === response.id);
                 if (demo) {
                     const proportion = demo.sample / totalSample;
-                    totalFavorable += (response.favorable / 100) * proportion;
-                    totalUnfavorable += (response.unfavorable / 100) * proportion;
-                    totalNeutral += (response.neutral / 100) * proportion;
+                    fields.forEach(field => {
+                        totals[field] += (response[field] / 100) * proportion;
+                    });
                 }
             });
 
-            return {
-                favorable: totalFavorable * 100,
-                unfavorable: totalUnfavorable * 100,
-                neutral: totalNeutral * 100
-            };
+            const result = {};
+            fields.forEach(field => {
+                result[field] = totals[field] * 100;
+            });
+            return result;
         }
 
         // Render functions
@@ -272,51 +358,125 @@
 
         function renderResponses() {
             const container = document.getElementById('responses-container');
-            container.innerHTML = responses.map(response => `
-                <div class="bg-white p-4 rounded border fade-in">
-                    <div class="mb-3">
-                        <h4 class="font-medium text-gray-900">${response.category || 'Unnamed Category'}</h4>
+            const responses = getCurrentResponses();
+            
+            if (currentScale === 'three-point') {
+                container.innerHTML = responses.map(response => `
+                    <div class="bg-white p-4 rounded border fade-in">
+                        <div class="mb-3">
+                            <h4 class="font-medium text-gray-900">${response.category || 'Unnamed Category'}</h4>
+                        </div>
+                        <div class="grid grid-cols-3 gap-3">
+                            <div>
+                                <label class="block text-sm font-medium text-green-700 mb-1">Yes %</label>
+                                <input
+                                    type="number"
+                                    value="${response.yes}"
+                                    oninput="updateResponse(${response.id}, 'yes', this.value)"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                    step="0.1"
+                                    min="0"
+                                    max="100"
+                                />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-red-700 mb-1">No %</label>
+                                <input
+                                    type="number"
+                                    value="${response.no}"
+                                    oninput="updateResponse(${response.id}, 'no', this.value)"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                                    step="0.1"
+                                    min="0"
+                                    max="100"
+                                />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Not Sure %</label>
+                                <input
+                                    type="number"
+                                    value="${response.not_sure}"
+                                    oninput="updateResponse(${response.id}, 'not_sure', this.value)"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+                                    step="0.1"
+                                    min="0"
+                                    max="100"
+                                />
+                            </div>
+                        </div>
                     </div>
-                    <div class="grid grid-cols-3 gap-3">
-                        <div>
-                            <label class="block text-sm font-medium text-green-700 mb-1">Favorable %</label>
-                            <input
-                                type="number"
-                                value="${response.favorable}"
-                                oninput="updateResponse(${response.id}, 'favorable', this.value)"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                                step="0.1"
-                                min="0"
-                                max="100"
-                            />
+                `).join('');
+            } else {
+                container.innerHTML = responses.map(response => `
+                    <div class="bg-white p-4 rounded border fade-in">
+                        <div class="mb-3">
+                            <h4 class="font-medium text-gray-900">${response.category || 'Unnamed Category'}</h4>
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium text-red-700 mb-1">Unfavorable %</label>
-                            <input
-                                type="number"
-                                value="${response.unfavorable}"
-                                oninput="updateResponse(${response.id}, 'unfavorable', this.value)"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                                step="0.1"
-                                min="0"
-                                max="100"
-                            />
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Neutral %</label>
-                            <input
-                                type="number"
-                                value="${response.neutral}"
-                                oninput="updateResponse(${response.id}, 'neutral', this.value)"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-gray-500 focus:border-transparent"
-                                step="0.1"
-                                min="0"
-                                max="100"
-                            />
+                        <div class="grid grid-cols-5 gap-2">
+                            <div>
+                                <label class="block text-xs font-medium text-green-700 mb-1">Strongly Agree %</label>
+                                <input
+                                    type="number"
+                                    value="${response.strongly_agree}"
+                                    oninput="updateResponse(${response.id}, 'strongly_agree', this.value)"
+                                    class="w-full px-2 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                    step="0.1"
+                                    min="0"
+                                    max="100"
+                                />
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-green-600 mb-1">Somewhat Agree %</label>
+                                <input
+                                    type="number"
+                                    value="${response.somewhat_agree}"
+                                    oninput="updateResponse(${response.id}, 'somewhat_agree', this.value)"
+                                    class="w-full px-2 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                    step="0.1"
+                                    min="0"
+                                    max="100"
+                                />
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">Neutral %</label>
+                                <input
+                                    type="number"
+                                    value="${response.neutral}"
+                                    oninput="updateResponse(${response.id}, 'neutral', this.value)"
+                                    class="w-full px-2 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+                                    step="0.1"
+                                    min="0"
+                                    max="100"
+                                />
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-red-600 mb-1">Somewhat Disagree %</label>
+                                <input
+                                    type="number"
+                                    value="${response.somewhat_disagree}"
+                                    oninput="updateResponse(${response.id}, 'somewhat_disagree', this.value)"
+                                    class="w-full px-2 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                                    step="0.1"
+                                    min="0"
+                                    max="100"
+                                />
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-red-700 mb-1">Strongly Disagree %</label>
+                                <input
+                                    type="number"
+                                    value="${response.strongly_disagree}"
+                                    oninput="updateResponse(${response.id}, 'strongly_disagree', this.value)"
+                                    class="w-full px-2 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                                    step="0.1"
+                                    min="0"
+                                    max="100"
+                                />
+                            </div>
                         </div>
                     </div>
-                </div>
-            `).join('');
+                `).join('');
+            }
         }
 
         function renderWeights() {
@@ -336,61 +496,87 @@
             const unweightedResults = calculateUnweightedResults();
             const weightedResults = calculateWeightedResults();
             
-            document.getElementById('unweighted-results').innerHTML = `
-                <div class="flex justify-between items-center">
-                    <span class="text-green-700 font-medium">Favorable:</span>
-                    <span class="font-mono text-lg font-bold text-green-700">
-                        ${unweightedResults.favorable.toFixed(1)}%
-                    </span>
-                </div>
-                <div class="flex justify-between items-center">
-                    <span class="text-red-700 font-medium">Unfavorable:</span>
-                    <span class="font-mono text-lg font-bold text-red-700">
-                        ${unweightedResults.unfavorable.toFixed(1)}%
-                    </span>
-                </div>
-                <div class="flex justify-between items-center">
-                    <span class="text-gray-700 font-medium">Neutral:</span>
-                    <span class="font-mono text-lg font-bold text-gray-700">
-                        ${unweightedResults.neutral.toFixed(1)}%
-                    </span>
-                </div>
-            `;
+            if (currentScale === 'three-point') {
+                document.getElementById('unweighted-results').innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <span class="text-green-700 font-medium">Yes:</span>
+                        <span class="font-mono text-lg font-bold text-green-700">
+                            ${unweightedResults.yes.toFixed(1)}%
+                        </span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-red-700 font-medium">No:</span>
+                        <span class="font-mono text-lg font-bold text-red-700">
+                            ${unweightedResults.no.toFixed(1)}%
+                        </span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-700 font-medium">Not Sure:</span>
+                        <span class="font-mono text-lg font-bold text-gray-700">
+                            ${unweightedResults.not_sure.toFixed(1)}%
+                        </span>
+                    </div>
+                `;
 
-            document.getElementById('weighted-results').innerHTML = `
-                <div class="flex justify-between items-center">
-                    <span class="text-green-700 font-medium">Favorable:</span>
-                    <span class="font-mono text-lg font-bold text-green-700">
-                        ${weightedResults.favorable.toFixed(1)}%
-                    </span>
-                </div>
-                <div class="flex justify-between items-center">
-                    <span class="text-red-700 font-medium">Unfavorable:</span>
-                    <span class="font-mono text-lg font-bold text-red-700">
-                        ${weightedResults.unfavorable.toFixed(1)}%
-                    </span>
-                </div>
-                <div class="flex justify-between items-center">
-                    <span class="text-gray-700 font-medium">Neutral:</span>
-                    <span class="font-mono text-lg font-bold text-gray-700">
-                        ${weightedResults.neutral.toFixed(1)}%
-                    </span>
-                </div>
-            `;
-        }
+                document.getElementById('weighted-results').innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <span class="text-green-700 font-medium">Yes:</span>
+                        <span class="font-mono text-lg font-bold text-green-700">
+                            ${weightedResults.yes.toFixed(1)}%
+                        </span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-red-700 font-medium">No:</span>
+                        <span class="font-mono text-lg font-bold text-red-700">
+                            ${weightedResults.no.toFixed(1)}%
+                        </span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-700 font-medium">Not Sure:</span>
+                        <span class="font-mono text-lg font-bold text-gray-700">
+                            ${weightedResults.not_sure.toFixed(1)}%
+                        </span>
+                    </div>
+                `;
+            } else {
+                document.getElementById('unweighted-results').innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <span class="text-green-700 font-medium">Strongly Agree:</span>
+                        <span class="font-mono text-sm font-bold text-green-700">
+                            ${unweightedResults.strongly_agree.toFixed(1)}%
+                        </span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-green-600 font-medium">Somewhat Agree:</span>
+                        <span class="font-mono text-sm font-bold text-green-600">
+                            ${unweightedResults.somewhat_agree.toFixed(1)}%
+                        </span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-700 font-medium">Neutral:</span>
+                        <span class="font-mono text-sm font-bold text-gray-700">
+                            ${unweightedResults.neutral.toFixed(1)}%
+                        </span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-red-600 font-medium">Somewhat Disagree:</span>
+                        <span class="font-mono text-sm font-bold text-red-600">
+                            ${unweightedResults.somewhat_disagree.toFixed(1)}%
+                        </span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-red-700 font-medium">Strongly Disagree:</span>
+                        <span class="font-mono text-sm font-bold text-red-700">
+                            ${unweightedResults.strongly_disagree.toFixed(1)}%
+                        </span>
+                    </div>
+                `;
 
-        function render() {
-            renderDemographics();
-            renderResponses();
-            renderWeights();
-            renderResults();
-        }
-
-        // Event listeners
-        document.getElementById('add-demographic-btn').addEventListener('click', addDemographic);
-
-        // Initial render
-        document.addEventListener('DOMContentLoaded', render);
-    </script>
-</body>
-</html> 
+                document.getElementById('weighted-results').innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <span class="text-green-700 font-medium">Strongly Agree:</span>
+                        <span class="font-mono text-sm font-bold text-green-700">
+                            ${weightedResults.strongly_agree.toFixed(1)}%
+                        </span>
+                    </div>
+                    
