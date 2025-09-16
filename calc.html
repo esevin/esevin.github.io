@@ -1,321 +1,396 @@
-import React, { useState, useCallback } from 'react';
-import { Plus, Trash2, Calculator, Info } from 'lucide-react';
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Public Opinion Weighting Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .fade-in {
+            animation: fadeIn 0.3s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .hover-lift:hover {
+            transform: translateY(-2px);
+            transition: transform 0.2s ease;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="max-w-6xl mx-auto p-6 bg-white my-8 rounded-lg shadow-lg">
+        <div class="mb-8 text-center">
+            <h1 class="text-4xl font-bold text-gray-900 mb-3">Public Opinion Weighting Calculator</h1>
+            <p class="text-lg text-gray-600">Adjust survey data to match population demographics for more accurate results.</p>
+        </div>
 
-const PublicOpinionWeightingCalculator = () => {
-  const [demographics, setDemographics] = useState([
-    { id: 1, category: 'Age 18-34', population: 30, sample: 25 },
-    { id: 2, category: 'Age 35-54', population: 35, sample: 40 },
-    { id: 3, category: 'Age 55+', population: 35, sample: 35 }
-  ]);
-  
-  const [responses, setResponses] = useState([
-    { id: 1, category: 'Age 18-34', favorable: 60, unfavorable: 35, neutral: 5 },
-    { id: 2, category: 'Age 35-54', favorable: 45, unfavorable: 50, neutral: 5 },
-    { id: 3, category: 'Age 55+', favorable: 40, unfavorable: 55, neutral: 5 }
-  ]);
-
-  const addDemographic = () => {
-    const newId = Math.max(...demographics.map(d => d.id)) + 1;
-    setDemographics([...demographics, { id: newId, category: '', population: 0, sample: 0 }]);
-    setResponses([...responses, { id: newId, category: '', favorable: 0, unfavorable: 0, neutral: 0 }]);
-  };
-
-  const removeDemographic = (id) => {
-    setDemographics(demographics.filter(d => d.id !== id));
-    setResponses(responses.filter(r => r.id !== id));
-  };
-
-  const updateDemographic = (id, field, value) => {
-    setDemographics(demographics.map(d => 
-      d.id === id ? { ...d, [field]: value } : d
-    ));
-    if (field === 'category') {
-      setResponses(responses.map(r => 
-        r.id === id ? { ...r, category: value } : r
-      ));
-    }
-  };
-
-  const updateResponse = (id, field, value) => {
-    setResponses(responses.map(r => 
-      r.id === id ? { ...r, [field]: parseFloat(value) || 0 } : r
-    ));
-  };
-
-  const calculateWeights = () => {
-    return demographics.map(demo => ({
-      ...demo,
-      weight: demo.sample > 0 ? demo.population / demo.sample : 0
-    }));
-  };
-
-  const calculateWeightedResults = () => {
-    const weights = calculateWeights();
-    let totalWeightedFavorable = 0;
-    let totalWeightedUnfavorable = 0;
-    let totalWeightedNeutral = 0;
-    let totalWeight = 0;
-
-    weights.forEach(weight => {
-      const response = responses.find(r => r.id === weight.id);
-      if (response) {
-        const w = weight.weight;
-        totalWeightedFavorable += (response.favorable / 100) * w;
-        totalWeightedUnfavorable += (response.unfavorable / 100) * w;
-        totalWeightedNeutral += (response.neutral / 100) * w;
-        totalWeight += w;
-      }
-    });
-
-    if (totalWeight === 0) return { favorable: 0, unfavorable: 0, neutral: 0 };
-
-    return {
-      favorable: (totalWeightedFavorable / totalWeight) * 100,
-      unfavorable: (totalWeightedUnfavorable / totalWeight) * 100,
-      neutral: (totalWeightedNeutral / totalWeight) * 100
-    };
-  };
-
-  const calculateUnweightedResults = () => {
-    const totalSample = demographics.reduce((sum, d) => sum + d.sample, 0);
-    if (totalSample === 0) return { favorable: 0, unfavorable: 0, neutral: 0 };
-
-    let totalFavorable = 0;
-    let totalUnfavorable = 0;
-    let totalNeutral = 0;
-
-    responses.forEach(response => {
-      const demo = demographics.find(d => d.id === response.id);
-      if (demo) {
-        const proportion = demo.sample / totalSample;
-        totalFavorable += (response.favorable / 100) * proportion;
-        totalUnfavorable += (response.unfavorable / 100) * proportion;
-        totalNeutral += (response.neutral / 100) * proportion;
-      }
-    });
-
-    return {
-      favorable: totalFavorable * 100,
-      unfavorable: totalUnfavorable * 100,
-      neutral: totalNeutral * 100
-    };
-  };
-
-  const weights = calculateWeights();
-  const weightedResults = calculateWeightedResults();
-  const unweightedResults = calculateUnweightedResults();
-
-  return (
-    <div className="max-w-6xl mx-auto p-6 bg-white">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Public Opinion Weighting Calculator</h1>
-        <p className="text-gray-600">Adjust survey data to match population demographics for more accurate results.</p>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Demographics Section */}
-        <div className="space-y-6">
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <Info className="w-5 h-5 text-blue-600" />
-              Demographics & Sample
-            </h2>
-            
-            <div className="space-y-4">
-              {demographics.map((demo, index) => (
-                <div key={demo.id} className="bg-white p-4 rounded border">
-                  <div className="grid grid-cols-12 gap-3 items-center">
-                    <div className="col-span-5">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                      <input
-                        type="text"
-                        value={demo.category}
-                        onChange={(e) => updateDemographic(demo.id, 'category', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-                        placeholder="e.g., Age 18-34"
-                      />
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Demographics Section -->
+            <div class="space-y-6">
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 hover-lift">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        Demographics & Sample
+                    </h2>
+                    
+                    <div id="demographics-container" class="space-y-4">
+                        <!-- Demographics will be added here -->
                     </div>
-                    <div className="col-span-3">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Population %</label>
-                      <input
-                        type="number"
-                        value={demo.population}
-                        onChange={(e) => updateDemographic(demo.id, 'population', parseFloat(e.target.value) || 0)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-                        step="0.1"
-                      />
-                    </div>
-                    <div className="col-span-3">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Sample %</label>
-                      <input
-                        type="number"
-                        value={demo.sample}
-                        onChange={(e) => updateDemographic(demo.id, 'sample', parseFloat(e.target.value) || 0)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-                        step="0.1"
-                      />
-                    </div>
-                    <div className="col-span-1">
-                      {demographics.length > 1 && (
-                        <button
-                          onClick={() => removeDemographic(demo.id)}
-                          className="mt-6 p-2 text-red-600 hover:bg-red-50 rounded"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      )}
-                    </div>
-                  </div>
+
+                    <button id="add-demographic-btn" class="mt-4 flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-all duration-200 hover-lift">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                        </svg>
+                        Add Demographic
+                    </button>
                 </div>
-              ))}
-            </div>
 
-            <button
-              onClick={addDemographic}
-              className="mt-4 flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-              Add Demographic
-            </button>
-          </div>
-
-          {/* Weights Display */}
-          <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Calculated Weights</h3>
-            <div className="space-y-2">
-              {weights.map(weight => (
-                <div key={weight.id} className="flex justify-between items-center py-2 border-b border-gray-200 last:border-b-0">
-                  <span className="text-sm text-gray-700">{weight.category || 'Unnamed'}</span>
-                  <span className="font-mono text-sm font-medium">
-                    {weight.weight.toFixed(3)}
-                  </span>
+                <!-- Weights Display -->
+                <div class="bg-gray-50 border border-gray-200 rounded-lg p-6 hover-lift">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Calculated Weights</h3>
+                    <div id="weights-display" class="space-y-2">
+                        <!-- Weights will be displayed here -->
+                    </div>
                 </div>
-              ))}
             </div>
-          </div>
-        </div>
 
-        {/* Opinion Responses Section */}
-        <div className="space-y-6">
-          <div className="bg-green-50 border border-green-200 rounded-lg p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <Calculator className="w-5 h-5 text-green-600" />
-              Opinion Responses by Group
-            </h2>
-            
-            <div className="space-y-4">
-              {responses.map((response) => (
-                <div key={response.id} className="bg-white p-4 rounded border">
-                  <div className="mb-3">
-                    <h4 className="font-medium text-gray-900">{response.category || 'Unnamed Category'}</h4>
-                  </div>
-                  <div className="grid grid-cols-3 gap-3">
-                    <div>
-                      <label className="block text-sm font-medium text-green-700 mb-1">Favorable %</label>
-                      <input
-                        type="number"
-                        value={response.favorable}
-                        onChange={(e) => updateResponse(response.id, 'favorable', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-                        step="0.1"
-                        min="0"
-                        max="100"
-                      />
+            <!-- Opinion Responses Section -->
+            <div class="space-y-6">
+                <div class="bg-green-50 border border-green-200 rounded-lg p-6 hover-lift">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                        <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                        </svg>
+                        Opinion Responses by Group
+                    </h2>
+                    
+                    <div id="responses-container" class="space-y-4">
+                        <!-- Opinion responses will be added here -->
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-red-700 mb-1">Unfavorable %</label>
-                      <input
-                        type="number"
-                        value={response.unfavorable}
-                        onChange={(e) => updateResponse(response.id, 'unfavorable', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-                        step="0.1"
-                        min="0"
-                        max="100"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Neutral %</label>
-                      <input
-                        type="number"
-                        value={response.neutral}
-                        onChange={(e) => updateResponse(response.id, 'neutral', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-                        step="0.1"
-                        min="0"
-                        max="100"
-                      />
-                    </div>
-                  </div>
                 </div>
-              ))}
             </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Results Section */}
-      <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Unweighted Results</h3>
-          <div className="space-y-3">
-            <div className="flex justify-between items-center">
-              <span className="text-green-700 font-medium">Favorable:</span>
-              <span className="font-mono text-lg font-bold text-green-700">
-                {unweightedResults.favorable.toFixed(1)}%
-              </span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-red-700 font-medium">Unfavorable:</span>
-              <span className="font-mono text-lg font-bold text-red-700">
-                {unweightedResults.unfavorable.toFixed(1)}%
-              </span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-gray-700 font-medium">Neutral:</span>
-              <span className="font-mono text-lg font-bold text-gray-700">
-                {unweightedResults.neutral.toFixed(1)}%
-              </span>
-            </div>
-          </div>
         </div>
 
-        <div className="bg-purple-50 border border-purple-200 rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Weighted Results</h3>
-          <div className="space-y-3">
-            <div className="flex justify-between items-center">
-              <span className="text-green-700 font-medium">Favorable:</span>
-              <span className="font-mono text-lg font-bold text-green-700">
-                {weightedResults.favorable.toFixed(1)}%
-              </span>
+        <!-- Results Section -->
+        <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 hover-lift">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Unweighted Results</h3>
+                <div id="unweighted-results" class="space-y-3">
+                    <!-- Results will be displayed here -->
+                </div>
             </div>
-            <div className="flex justify-between items-center">
-              <span className="text-red-700 font-medium">Unfavorable:</span>
-              <span className="font-mono text-lg font-bold text-red-700">
-                {weightedResults.unfavorable.toFixed(1)}%
-              </span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-gray-700 font-medium">Neutral:</span>
-              <span className="font-mono text-lg font-bold text-gray-700">
-                {weightedResults.neutral.toFixed(1)}%
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
 
-      <div className="mt-8 bg-gray-50 border border-gray-200 rounded-lg p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-3">How to Use This Calculator</h3>
-        <div className="text-sm text-gray-600 space-y-2">
-          <p><strong>1. Demographics:</strong> Enter your demographic categories and their representation in both the true population and your sample.</p>
-          <p><strong>2. Responses:</strong> Enter the opinion percentages for each demographic group from your survey.</p>
-          <p><strong>3. Weights:</strong> The calculator automatically computes weights (Population % ÷ Sample %) for each group.</p>
-          <p><strong>4. Results:</strong> Compare unweighted (raw) results with weighted results that adjust for demographic imbalances.</p>
+            <div class="bg-purple-50 border border-purple-200 rounded-lg p-6 hover-lift">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Weighted Results</h3>
+                <div id="weighted-results" class="space-y-3">
+                    <!-- Results will be displayed here -->
+                </div>
+            </div>
         </div>
-      </div>
+
+        <div class="mt-8 bg-gray-50 border border-gray-200 rounded-lg p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-3">How to Use This Calculator</h3>
+            <div class="text-sm text-gray-600 space-y-2">
+                <p><strong>1. Demographics:</strong> Enter your demographic categories and their representation in both the true population and your sample.</p>
+                <p><strong>2. Responses:</strong> Enter the opinion percentages for each demographic group from your survey.</p>
+                <p><strong>3. Weights:</strong> The calculator automatically computes weights (Population % ÷ Sample %) for each group.</p>
+                <p><strong>4. Results:</strong> Compare unweighted (raw) results with weighted results that adjust for demographic imbalances.</p>
+            </div>
+        </div>
     </div>
-  );
-};
 
-export default PublicOpinionWeightingCalculator;
+    <script>
+        // Application state
+        let demographics = [
+            { id: 1, category: 'Age 18-34', population: 30, sample: 25 },
+            { id: 2, category: 'Age 35-54', population: 35, sample: 40 },
+            { id: 3, category: 'Age 55+', population: 35, sample: 35 }
+        ];
+        
+        let responses = [
+            { id: 1, category: 'Age 18-34', favorable: 60, unfavorable: 35, neutral: 5 },
+            { id: 2, category: 'Age 35-54', favorable: 45, unfavorable: 50, neutral: 5 },
+            { id: 3, category: 'Age 55+', favorable: 40, unfavorable: 55, neutral: 5 }
+        ];
+
+        let nextId = 4;
+
+        // Utility functions
+        function getNextId() {
+            return nextId++;
+        }
+
+        function updateDemographic(id, field, value) {
+            const demo = demographics.find(d => d.id === id);
+            if (demo) {
+                demo[field] = field === 'category' ? value : (parseFloat(value) || 0);
+                if (field === 'category') {
+                    const response = responses.find(r => r.id === id);
+                    if (response) response.category = value;
+                }
+                render();
+            }
+        }
+
+        function updateResponse(id, field, value) {
+            const response = responses.find(r => r.id === id);
+            if (response) {
+                response[field] = parseFloat(value) || 0;
+                render();
+            }
+        }
+
+        function addDemographic() {
+            const newId = getNextId();
+            demographics.push({ id: newId, category: '', population: 0, sample: 0 });
+            responses.push({ id: newId, category: '', favorable: 0, unfavorable: 0, neutral: 0 });
+            render();
+        }
+
+        function removeDemographic(id) {
+            demographics = demographics.filter(d => d.id !== id);
+            responses = responses.filter(r => r.id !== id);
+            render();
+        }
+
+        function calculateWeights() {
+            return demographics.map(demo => ({
+                ...demo,
+                weight: demo.sample > 0 ? demo.population / demo.sample : 0
+            }));
+        }
+
+        function calculateWeightedResults() {
+            const weights = calculateWeights();
+            let totalWeightedFavorable = 0;
+            let totalWeightedUnfavorable = 0;
+            let totalWeightedNeutral = 0;
+            let totalWeight = 0;
+
+            weights.forEach(weight => {
+                const response = responses.find(r => r.id === weight.id);
+                if (response) {
+                    const w = weight.weight;
+                    totalWeightedFavorable += (response.favorable / 100) * w;
+                    totalWeightedUnfavorable += (response.unfavorable / 100) * w;
+                    totalWeightedNeutral += (response.neutral / 100) * w;
+                    totalWeight += w;
+                }
+            });
+
+            if (totalWeight === 0) return { favorable: 0, unfavorable: 0, neutral: 0 };
+
+            return {
+                favorable: (totalWeightedFavorable / totalWeight) * 100,
+                unfavorable: (totalWeightedUnfavorable / totalWeight) * 100,
+                neutral: (totalWeightedNeutral / totalWeight) * 100
+            };
+        }
+
+        function calculateUnweightedResults() {
+            const totalSample = demographics.reduce((sum, d) => sum + d.sample, 0);
+            if (totalSample === 0) return { favorable: 0, unfavorable: 0, neutral: 0 };
+
+            let totalFavorable = 0;
+            let totalUnfavorable = 0;
+            let totalNeutral = 0;
+
+            responses.forEach(response => {
+                const demo = demographics.find(d => d.id === response.id);
+                if (demo) {
+                    const proportion = demo.sample / totalSample;
+                    totalFavorable += (response.favorable / 100) * proportion;
+                    totalUnfavorable += (response.unfavorable / 100) * proportion;
+                    totalNeutral += (response.neutral / 100) * proportion;
+                }
+            });
+
+            return {
+                favorable: totalFavorable * 100,
+                unfavorable: totalUnfavorable * 100,
+                neutral: totalNeutral * 100
+            };
+        }
+
+        // Render functions
+        function renderDemographics() {
+            const container = document.getElementById('demographics-container');
+            container.innerHTML = demographics.map(demo => `
+                <div class="bg-white p-4 rounded border fade-in">
+                    <div class="grid grid-cols-12 gap-3 items-center">
+                        <div class="col-span-5">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                            <input
+                                type="text"
+                                value="${demo.category}"
+                                oninput="updateDemographic(${demo.id}, 'category', this.value)"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                placeholder="e.g., Age 18-34"
+                            />
+                        </div>
+                        <div class="col-span-3">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Population %</label>
+                            <input
+                                type="number"
+                                value="${demo.population}"
+                                oninput="updateDemographic(${demo.id}, 'population', this.value)"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                step="0.1"
+                            />
+                        </div>
+                        <div class="col-span-3">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Sample %</label>
+                            <input
+                                type="number"
+                                value="${demo.sample}"
+                                oninput="updateDemographic(${demo.id}, 'sample', this.value)"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                step="0.1"
+                            />
+                        </div>
+                        <div class="col-span-1">
+                            ${demographics.length > 1 ? `
+                                <button
+                                    onclick="removeDemographic(${demo.id})"
+                                    class="mt-6 p-2 text-red-600 hover:bg-red-50 rounded transition-colors"
+                                    title="Remove demographic"
+                                >
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                    </svg>
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderResponses() {
+            const container = document.getElementById('responses-container');
+            container.innerHTML = responses.map(response => `
+                <div class="bg-white p-4 rounded border fade-in">
+                    <div class="mb-3">
+                        <h4 class="font-medium text-gray-900">${response.category || 'Unnamed Category'}</h4>
+                    </div>
+                    <div class="grid grid-cols-3 gap-3">
+                        <div>
+                            <label class="block text-sm font-medium text-green-700 mb-1">Favorable %</label>
+                            <input
+                                type="number"
+                                value="${response.favorable}"
+                                oninput="updateResponse(${response.id}, 'favorable', this.value)"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                step="0.1"
+                                min="0"
+                                max="100"
+                            />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-red-700 mb-1">Unfavorable %</label>
+                            <input
+                                type="number"
+                                value="${response.unfavorable}"
+                                oninput="updateResponse(${response.id}, 'unfavorable', this.value)"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                                step="0.1"
+                                min="0"
+                                max="100"
+                            />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Neutral %</label>
+                            <input
+                                type="number"
+                                value="${response.neutral}"
+                                oninput="updateResponse(${response.id}, 'neutral', this.value)"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+                                step="0.1"
+                                min="0"
+                                max="100"
+                            />
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderWeights() {
+            const weights = calculateWeights();
+            const container = document.getElementById('weights-display');
+            container.innerHTML = weights.map(weight => `
+                <div class="flex justify-between items-center py-2 border-b border-gray-200 last:border-b-0">
+                    <span class="text-sm text-gray-700">${weight.category || 'Unnamed'}</span>
+                    <span class="font-mono text-sm font-medium ${weight.weight > 1 ? 'text-blue-600' : weight.weight < 1 ? 'text-orange-600' : 'text-gray-900'}">
+                        ${weight.weight.toFixed(3)}
+                    </span>
+                </div>
+            `).join('');
+        }
+
+        function renderResults() {
+            const unweightedResults = calculateUnweightedResults();
+            const weightedResults = calculateWeightedResults();
+            
+            document.getElementById('unweighted-results').innerHTML = `
+                <div class="flex justify-between items-center">
+                    <span class="text-green-700 font-medium">Favorable:</span>
+                    <span class="font-mono text-lg font-bold text-green-700">
+                        ${unweightedResults.favorable.toFixed(1)}%
+                    </span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-red-700 font-medium">Unfavorable:</span>
+                    <span class="font-mono text-lg font-bold text-red-700">
+                        ${unweightedResults.unfavorable.toFixed(1)}%
+                    </span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-700 font-medium">Neutral:</span>
+                    <span class="font-mono text-lg font-bold text-gray-700">
+                        ${unweightedResults.neutral.toFixed(1)}%
+                    </span>
+                </div>
+            `;
+
+            document.getElementById('weighted-results').innerHTML = `
+                <div class="flex justify-between items-center">
+                    <span class="text-green-700 font-medium">Favorable:</span>
+                    <span class="font-mono text-lg font-bold text-green-700">
+                        ${weightedResults.favorable.toFixed(1)}%
+                    </span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-red-700 font-medium">Unfavorable:</span>
+                    <span class="font-mono text-lg font-bold text-red-700">
+                        ${weightedResults.unfavorable.toFixed(1)}%
+                    </span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-700 font-medium">Neutral:</span>
+                    <span class="font-mono text-lg font-bold text-gray-700">
+                        ${weightedResults.neutral.toFixed(1)}%
+                    </span>
+                </div>
+            `;
+        }
+
+        function render() {
+            renderDemographics();
+            renderResponses();
+            renderWeights();
+            renderResults();
+        }
+
+        // Event listeners
+        document.getElementById('add-demographic-btn').addEventListener('click', addDemographic);
+
+        // Initial render
+        document.addEventListener('DOMContentLoaded', render);
+    </script>
+</body>
+</html>
