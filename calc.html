@@ -1,0 +1,321 @@
+import React, { useState, useCallback } from 'react';
+import { Plus, Trash2, Calculator, Info } from 'lucide-react';
+
+const PublicOpinionWeightingCalculator = () => {
+  const [demographics, setDemographics] = useState([
+    { id: 1, category: 'Age 18-34', population: 30, sample: 25 },
+    { id: 2, category: 'Age 35-54', population: 35, sample: 40 },
+    { id: 3, category: 'Age 55+', population: 35, sample: 35 }
+  ]);
+  
+  const [responses, setResponses] = useState([
+    { id: 1, category: 'Age 18-34', favorable: 60, unfavorable: 35, neutral: 5 },
+    { id: 2, category: 'Age 35-54', favorable: 45, unfavorable: 50, neutral: 5 },
+    { id: 3, category: 'Age 55+', favorable: 40, unfavorable: 55, neutral: 5 }
+  ]);
+
+  const addDemographic = () => {
+    const newId = Math.max(...demographics.map(d => d.id)) + 1;
+    setDemographics([...demographics, { id: newId, category: '', population: 0, sample: 0 }]);
+    setResponses([...responses, { id: newId, category: '', favorable: 0, unfavorable: 0, neutral: 0 }]);
+  };
+
+  const removeDemographic = (id) => {
+    setDemographics(demographics.filter(d => d.id !== id));
+    setResponses(responses.filter(r => r.id !== id));
+  };
+
+  const updateDemographic = (id, field, value) => {
+    setDemographics(demographics.map(d => 
+      d.id === id ? { ...d, [field]: value } : d
+    ));
+    if (field === 'category') {
+      setResponses(responses.map(r => 
+        r.id === id ? { ...r, category: value } : r
+      ));
+    }
+  };
+
+  const updateResponse = (id, field, value) => {
+    setResponses(responses.map(r => 
+      r.id === id ? { ...r, [field]: parseFloat(value) || 0 } : r
+    ));
+  };
+
+  const calculateWeights = () => {
+    return demographics.map(demo => ({
+      ...demo,
+      weight: demo.sample > 0 ? demo.population / demo.sample : 0
+    }));
+  };
+
+  const calculateWeightedResults = () => {
+    const weights = calculateWeights();
+    let totalWeightedFavorable = 0;
+    let totalWeightedUnfavorable = 0;
+    let totalWeightedNeutral = 0;
+    let totalWeight = 0;
+
+    weights.forEach(weight => {
+      const response = responses.find(r => r.id === weight.id);
+      if (response) {
+        const w = weight.weight;
+        totalWeightedFavorable += (response.favorable / 100) * w;
+        totalWeightedUnfavorable += (response.unfavorable / 100) * w;
+        totalWeightedNeutral += (response.neutral / 100) * w;
+        totalWeight += w;
+      }
+    });
+
+    if (totalWeight === 0) return { favorable: 0, unfavorable: 0, neutral: 0 };
+
+    return {
+      favorable: (totalWeightedFavorable / totalWeight) * 100,
+      unfavorable: (totalWeightedUnfavorable / totalWeight) * 100,
+      neutral: (totalWeightedNeutral / totalWeight) * 100
+    };
+  };
+
+  const calculateUnweightedResults = () => {
+    const totalSample = demographics.reduce((sum, d) => sum + d.sample, 0);
+    if (totalSample === 0) return { favorable: 0, unfavorable: 0, neutral: 0 };
+
+    let totalFavorable = 0;
+    let totalUnfavorable = 0;
+    let totalNeutral = 0;
+
+    responses.forEach(response => {
+      const demo = demographics.find(d => d.id === response.id);
+      if (demo) {
+        const proportion = demo.sample / totalSample;
+        totalFavorable += (response.favorable / 100) * proportion;
+        totalUnfavorable += (response.unfavorable / 100) * proportion;
+        totalNeutral += (response.neutral / 100) * proportion;
+      }
+    });
+
+    return {
+      favorable: totalFavorable * 100,
+      unfavorable: totalUnfavorable * 100,
+      neutral: totalNeutral * 100
+    };
+  };
+
+  const weights = calculateWeights();
+  const weightedResults = calculateWeightedResults();
+  const unweightedResults = calculateUnweightedResults();
+
+  return (
+    <div className="max-w-6xl mx-auto p-6 bg-white">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Public Opinion Weighting Calculator</h1>
+        <p className="text-gray-600">Adjust survey data to match population demographics for more accurate results.</p>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Demographics Section */}
+        <div className="space-y-6">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <Info className="w-5 h-5 text-blue-600" />
+              Demographics & Sample
+            </h2>
+            
+            <div className="space-y-4">
+              {demographics.map((demo, index) => (
+                <div key={demo.id} className="bg-white p-4 rounded border">
+                  <div className="grid grid-cols-12 gap-3 items-center">
+                    <div className="col-span-5">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                      <input
+                        type="text"
+                        value={demo.category}
+                        onChange={(e) => updateDemographic(demo.id, 'category', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                        placeholder="e.g., Age 18-34"
+                      />
+                    </div>
+                    <div className="col-span-3">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Population %</label>
+                      <input
+                        type="number"
+                        value={demo.population}
+                        onChange={(e) => updateDemographic(demo.id, 'population', parseFloat(e.target.value) || 0)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                        step="0.1"
+                      />
+                    </div>
+                    <div className="col-span-3">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Sample %</label>
+                      <input
+                        type="number"
+                        value={demo.sample}
+                        onChange={(e) => updateDemographic(demo.id, 'sample', parseFloat(e.target.value) || 0)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                        step="0.1"
+                      />
+                    </div>
+                    <div className="col-span-1">
+                      {demographics.length > 1 && (
+                        <button
+                          onClick={() => removeDemographic(demo.id)}
+                          className="mt-6 p-2 text-red-600 hover:bg-red-50 rounded"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <button
+              onClick={addDemographic}
+              className="mt-4 flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              Add Demographic
+            </button>
+          </div>
+
+          {/* Weights Display */}
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Calculated Weights</h3>
+            <div className="space-y-2">
+              {weights.map(weight => (
+                <div key={weight.id} className="flex justify-between items-center py-2 border-b border-gray-200 last:border-b-0">
+                  <span className="text-sm text-gray-700">{weight.category || 'Unnamed'}</span>
+                  <span className="font-mono text-sm font-medium">
+                    {weight.weight.toFixed(3)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Opinion Responses Section */}
+        <div className="space-y-6">
+          <div className="bg-green-50 border border-green-200 rounded-lg p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <Calculator className="w-5 h-5 text-green-600" />
+              Opinion Responses by Group
+            </h2>
+            
+            <div className="space-y-4">
+              {responses.map((response) => (
+                <div key={response.id} className="bg-white p-4 rounded border">
+                  <div className="mb-3">
+                    <h4 className="font-medium text-gray-900">{response.category || 'Unnamed Category'}</h4>
+                  </div>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-sm font-medium text-green-700 mb-1">Favorable %</label>
+                      <input
+                        type="number"
+                        value={response.favorable}
+                        onChange={(e) => updateResponse(response.id, 'favorable', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                        step="0.1"
+                        min="0"
+                        max="100"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-red-700 mb-1">Unfavorable %</label>
+                      <input
+                        type="number"
+                        value={response.unfavorable}
+                        onChange={(e) => updateResponse(response.id, 'unfavorable', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                        step="0.1"
+                        min="0"
+                        max="100"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Neutral %</label>
+                      <input
+                        type="number"
+                        value={response.neutral}
+                        onChange={(e) => updateResponse(response.id, 'neutral', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                        step="0.1"
+                        min="0"
+                        max="100"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Results Section */}
+      <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Unweighted Results</h3>
+          <div className="space-y-3">
+            <div className="flex justify-between items-center">
+              <span className="text-green-700 font-medium">Favorable:</span>
+              <span className="font-mono text-lg font-bold text-green-700">
+                {unweightedResults.favorable.toFixed(1)}%
+              </span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-red-700 font-medium">Unfavorable:</span>
+              <span className="font-mono text-lg font-bold text-red-700">
+                {unweightedResults.unfavorable.toFixed(1)}%
+              </span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-gray-700 font-medium">Neutral:</span>
+              <span className="font-mono text-lg font-bold text-gray-700">
+                {unweightedResults.neutral.toFixed(1)}%
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-purple-50 border border-purple-200 rounded-lg p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Weighted Results</h3>
+          <div className="space-y-3">
+            <div className="flex justify-between items-center">
+              <span className="text-green-700 font-medium">Favorable:</span>
+              <span className="font-mono text-lg font-bold text-green-700">
+                {weightedResults.favorable.toFixed(1)}%
+              </span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-red-700 font-medium">Unfavorable:</span>
+              <span className="font-mono text-lg font-bold text-red-700">
+                {weightedResults.unfavorable.toFixed(1)}%
+              </span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-gray-700 font-medium">Neutral:</span>
+              <span className="font-mono text-lg font-bold text-gray-700">
+                {weightedResults.neutral.toFixed(1)}%
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-8 bg-gray-50 border border-gray-200 rounded-lg p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-3">How to Use This Calculator</h3>
+        <div className="text-sm text-gray-600 space-y-2">
+          <p><strong>1. Demographics:</strong> Enter your demographic categories and their representation in both the true population and your sample.</p>
+          <p><strong>2. Responses:</strong> Enter the opinion percentages for each demographic group from your survey.</p>
+          <p><strong>3. Weights:</strong> The calculator automatically computes weights (Population % ÷ Sample %) for each group.</p>
+          <p><strong>4. Results:</strong> Compare unweighted (raw) results with weighted results that adjust for demographic imbalances.</p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default PublicOpinionWeightingCalculator;
