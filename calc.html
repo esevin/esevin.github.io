@@ -34,6 +34,7 @@
         <div class="mb-8 text-center gradient-bg text-white p-8 rounded-lg">
             <h1 class="text-4xl font-bold mb-3">Dual Scale Opinion Weighting Calculator</h1>
             <p class="text-lg opacity-90">Choose between Yes/No/Not Sure or 5-point Likert scale for survey weighting</p>
+            </div>
         </div>
 
         <!-- Scale Selection -->
@@ -98,7 +99,17 @@
         </div>
 
         <!-- Results Section -->
-        <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="mt-8">
+            <div class="flex justify-center mb-6">
+                <button id="calculate-btn" class="px-8 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-semibold rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-1">
+                    <svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                    </svg>
+                    Calculate Results
+                </button>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 hover-lift">
                 <h3 class="text-lg font-semibold text-gray-900 mb-4">Unweighted Results</h3>
                 <div id="unweighted-results" class="space-y-3">
@@ -151,6 +162,7 @@
 
         let nextId = 4;
         let renderTimeout = null;
+        let autoCalculate = true; // Toggle for auto vs manual calculation
 
         // Get current responses based on selected scale
         function getCurrentResponses() {
@@ -162,15 +174,22 @@
             return nextId++;
         }
 
-        // Debounced render function
+        // Manual calculate function
+        function calculateResults() {
+            renderWeights();
+            renderResults();
+        }
+
+        // Debounced render function - now also calculates automatically
         function debouncedRender() {
+            if (!autoCalculate) return; // Skip if manual mode
+            
             if (renderTimeout) {
                 clearTimeout(renderTimeout);
             }
             renderTimeout = setTimeout(() => {
-                renderWeights();
-                renderResults();
-            }, 150); // Only re-render weights and results after 150ms pause
+                calculateResults();
+            }, 300); // Slightly longer delay for better UX
         }
 
         function switchScale(scale) {
