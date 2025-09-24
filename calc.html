@@ -150,6 +150,7 @@
         ];
 
         let nextId = 4;
+        let renderTimeout = null;
 
         // Get current responses based on selected scale
         function getCurrentResponses() {
@@ -159,6 +160,17 @@
         // Utility functions
         function getNextId() {
             return nextId++;
+        }
+
+        // Debounced render function
+        function debouncedRender() {
+            if (renderTimeout) {
+                clearTimeout(renderTimeout);
+            }
+            renderTimeout = setTimeout(() => {
+                renderWeights();
+                renderResults();
+            }, 150); // Only re-render weights and results after 150ms pause
         }
 
         function switchScale(scale) {
@@ -192,8 +204,12 @@
                     const fiveResponse = fivePointResponses.find(r => r.id === id);
                     if (threeResponse) threeResponse.category = value;
                     if (fiveResponse) fiveResponse.category = value;
+                    // Full render for category changes (affects labels)
+                    render();
+                } else {
+                    // Debounced render for numeric changes
+                    debouncedRender();
                 }
-                render();
             }
         }
 
@@ -202,7 +218,8 @@
             const response = responses.find(r => r.id === id);
             if (response) {
                 response[field] = parseFloat(value) || 0;
-                render();
+                // Only update results, not the entire interface
+                debouncedRender();
             }
         }
 
