@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A Research Agenda for Influence in Diplomacy – Editor Workspace</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/docx/7.8.2/docx.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8f9fa;
+            --text-primary: #2c3e50;
+            --text-secondary: #5a6c7d;
+            --accent: #4a7c9e;
+            --accent-hover: #3a6c8e;
+            --border: #d4dce5;
+            --success: #28a745;
+        }
+
+        body.dark-mode {
+            --bg-primary: #1a1f2e;
+            --bg-secondary: #252b3b;
+            --text-primary: #e4e7eb;
+            --text-secondary: #a8b2c1;
+            --accent: #5a8fb8;
+            --accent-hover: #6a9fc8;
+            --border: #3a4254;
+        }
+
+        body {
+            font-family: 'Georgia', 'Times New Roman', serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            transition: background 0.3s, color 0.3s;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        header {
+            background: var(--bg-secondary);
+            padding: 1.5rem 2rem;
+            border-bottom: 2px solid var(--accent);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        h1 {
+            font-size: 1.75rem;
+            color: var(--accent);
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+
+        .controls {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background 0.2s;
+        }
+
+        .btn:hover {
+            background: var(--accent-hover);
+        }
+
+        .btn-secondary {
+            background: var(--text-secondary);
+        }
+
+        .btn-secondary:hover {
+            background: var(--text-primary);
+        }
+
+        .sidebar {
+            width: 250px;
+            background: var(--bg-secondary);
+            padding: 1.5rem;
+            border-right: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .nav-item {
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background 0.2s;
+            color: var(--text-primary);
+        }
+
+        .nav-item:hover {
+            background: var(--bg-primary);
+        }
+
+        .nav-item.active {
+            background: var(--accent);
+            color: white;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 2rem;
+            overflow-y: auto;
+        }
+
+        .section {
+            display: none;
+            animation: fadeIn 0.3s;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+        }
+
+        input[type="text"],
+        textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-family: inherit;
+            font-size: 0.95rem;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            transition: border 0.2s;
+        }
+
+        input[type="text"]:focus,
+        textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .help-text {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--bg-secondary);
+            padding: 1.5rem;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .last-saved {
+            font-size: 0.85rem;
+            color: var(--success);
+            margin-left: 1rem;
+        }
+
+        footer {
+            text-align: center;
+            padding: 1.5rem;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            border-top: 1px solid var(--border);
+            background: var(--bg-secondary);
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 24px;
+            background: var(--border);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .toggle-switch.active {
+            background: var(--accent);
+        }
+
+        .toggle-slider {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.3s;
+        }
+
+        .toggle-switch.active .toggle-slider {
+            transform: translateX(26px);
+        }
+
+        .font-size-control {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .font-btn {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.8rem;
+        }
+
+        h2 {
+            color: var(--accent);
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+        }
+
+        h3 {
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+        }
+
+        .contributors-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .contributor-item {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .contributor-item input {
+            flex: 1;
+        }
+
+        .btn-small {
+            padding: 0.25rem 0.75rem;
+            font-size: 0.85rem;
+        }
+
+        .manage-section {
+            background: var(--bg-secondary);
+            padding: 1.5rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+            border: 1px solid var(--border);
+        }
+
+        .manage-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            margin-bottom: 0.5rem;
+        }
+
+        .manage-item input {
+            flex: 1;
+        }
+
+        .manage-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        .drag-handle {
+            cursor: move;
+            color: var(--text-secondary);
+            font-size: 1.2rem;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: static;
+            }
+
+            h1 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div style="position: sticky; top: 0; z-index: 200;">
+        <header>
+            <h1>A Research Agenda for Influence in Diplomacy</h1>
+            <p class="subtitle">Editor Workspace – Efe Sevin & M. Evren Eken</p>
+            <div class="controls">
+                <button class="btn" onclick="saveData()">💾 Save</button>
+                <button class="btn" onclick="exportMarkdown()">📄 Export Markdown</button>
+                <button class="btn" onclick="exportWord()">📘 Export Word</button>
+                <button class="btn" onclick="exportPDF()">📕 Export PDF</button>
+                <button class="btn btn-secondary" onclick="importData()">📁 Import JSON</button>
+                <button class="btn btn-secondary" onclick="exportJSON()">💾 Download JSON</button>
+                <span class="last-saved" id="lastSaved"></span>
+                <div class="font-size-control">
+                    <button class="btn btn-small font-btn" onclick="adjustFontSize(-1)">A-</button>
+                    <button class="btn btn-small font-btn" onclick="adjustFontSize(1)">A+</button>
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <span style="font-size: 0.9rem;">Dark Mode</span>
+                    <div class="toggle-switch" id="darkModeToggle" onclick="toggleDarkMode()">
+                        <div class="toggle-slider"></div>
+                    </div>
+                </div>
+            </div>
+        </header>
+    </div>
+
+    <div class="container">
+        <nav class="sidebar" id="sidebar">
+            <div class="nav-item active" onclick="showSection('overview')">📊 Overview</div>
+            <div id="dynamicNav"></div>
+            <div class="nav-item" onclick="showSection('notes')">📝 General Notes</div>
+            <div class="nav-item" onclick="showSection('manage')" style="border-top: 1px solid var(--border); margin-top: 1rem; padding-top: 1rem;">⚙️ Manage Parts</div>
+        </nav>
+
+        <main class="main-content" id="mainContent">
+            <!-- Overview Section -->
+            <section id="overview" class="section active">
+                <h2>Project Overview</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value">80,000</div>
+                        <div class="stat-label">Total Word Limit</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="partsCompleted">0/6</div>
+                        <div class="stat-label">Parts Outlined</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">June 30, 2027</div>
+                        <div class="stat-label">Contract Deadline</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">Edward Elgar</div>
+                        <div class="stat-label">Publisher</div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Project Summary</label>
+                    <textarea id="projectSummary" placeholder="Overall vision and goals for the volume..."></textarea>
+                </div>
+            </section>
+
+            <!-- Dynamic sections for parts will be inserted here -->
+        </main>
+    </div>
+
+    <footer>
+        Part of the Elgar Research Agendas series – Edward Elgar Publishing
+    </footer>
+
+    <input type="file" id="fileInput" style="display: none;" accept=".json" onchange="handleFileImport(event)">
+
+    <script>
+        const initialData = {
+            book: {
+                title: "A Research Agenda for Influence in Diplomacy",
+                editors: ["Efe Sevin", "M. Evren Eken"],
+                deadline: "2027-06-30",
+                word_limit: 80000
+            },
+            projectSummary: "",
+            generalNotes: "",
+            parts: [
+                {
+                    id: 1,
+                    title: "From Emergence to Maturity",
+                    summary: "Evolution of soft power and public diplomacy into mature fields.",
+                    questions: "What happens to PD as it achieves academic legitimacy?\nHow can it integrate with communication, IR, and technology studies?",
+                    contributors: [],
+                    notes: ""
+                },
+                {
+                    id: 2,
+                    title: "Beyond Existing Conceptualizations",
+                    summary: "Rethinking influence beyond Nye; non-Western perspectives.",
+                    questions: "Is 'soft power' still a useful concept, or has it reached its limits?\nWhat do regional perspectives contribute to theory?",
+                    contributors: [],
+                    notes: ""
+                },
+                {
+                    id: 3,
+                    title: "Crises of Practice",
+                    summary: "Disinformation, legitimacy deficits, 'soft-power fatigue.'",
+                    questions: "How do trust and manipulation reshape attraction?\nHow do legitimacy crises affect PD credibility?",
+                    contributors: [],
+                    notes: ""
+                },
+                {
+                    id: 4,
+                    title: "Global Disruptions",
+                    summary: "Pandemics, climate change, wars, and AI-driven communication.",
+                    questions: "How do pandemics, wars, and digital shifts stress-test PD and soft power?\nHow does multipolarity affect global attraction strategies?",
+                    contributors: [],
+                    notes: ""
+                },
+                {
+                    id: 5,
+                    title: "Fragmented Futures",
+                    summary: "Rise of regional soft powers and network diplomacy.",
+                    questions: "Are we seeing the end of 'global' soft power?\nWhat are the ethical and normative horizons of attraction-based diplomacy?",
+                    contributors: [],
+                    notes: ""
+                },
+                {
+                    id: 6,
+                    title: "Conclusion",
+                    summary: "",
+                    questions: "What comes after soft power and PD as we know them?",
+                    contributors: [],
+                    notes: "",
+                    isConclusion: true
+                }
+            ]
+        };
+
+        let data = JSON.parse(JSON.stringify(initialData));
+        let currentFontSize = 16;
+
+        function renderNavigation() {
+            const navContainer = document.getElementById('dynamicNav');
+            navContainer.innerHTML = data.parts.map((part, index) => {
+                const sectionId = part.isConclusion ? 'conclusion' : `part${index}`;
+                const label = part.isConclusion ? 'Conclusion' : `Part ${index + 1}`;
+                return `<div class="nav-item" onclick="showSection('${sectionId}')">${label}: ${part.title}</div>`;
+            }).join('');
+        }
+
+        function refreshInterface() {
+            renderNavigation();
+            const mainContent = document.getElementById('mainContent');
+            // Remove all part sections except overview, notes, and manage
+            mainContent.querySelectorAll('.section:not(#overview):not(#notes):not(#manage)').forEach(s => s.remove());
+            createPartSections();
+            updateStats();
+        }
+
+        // Initialize
+        window.addEventListener('load', () => {
+            loadData();
+            renderNavigation();
+            createPartSections();
+            createNotesSection();
+            createManageSection();
+            updateStats();
+            updateLastSaved();
+        });
+
+        function createPartSections() {
+            const mainContent = document.getElementById('mainContent');
+            
+            data.parts.forEach((part, index) => {
+                const sectionId = part.isConclusion ? 'conclusion' : `part${index}`;
+                const section = document.createElement('section');
+                section.id = sectionId;
+                section.className = 'section';
+                
+                const label = part.isConclusion ? 'Conclusion' : `Part ${index + 1}`;
+                
+                section.innerHTML = `
+                    <h2>${label}: ${part.title}</h2>
+                    
+                    <div class="form-group">
+                        <label>Section Focus / Summary</label>
+                        <textarea id="${sectionId}-summary" oninput="updatePartData(${index}, 'summary', this.value)">${part.summary}</textarea>
+                        <div class="help-text">Brief description of this section's focus and scope</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Guiding Questions</label>
+                        <textarea id="${sectionId}-questions" oninput="updatePartData(${index}, 'questions', this.value)">${part.questions}</textarea>
+                        <div class="help-text">Key research questions to guide contributors (one per line)</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Potential Contributors</label>
+                        <div id="${sectionId}-contributors" class="contributors-list"></div>
+                        <button class="btn btn-small" onclick="addContributor(${index})">+ Add Contributor</button>
+                        <div class="help-text">Names and institutions of potential chapter authors</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Editorial Comments</label>
+                        <textarea id="${sectionId}-notes" oninput="updatePartData(${index}, 'notes', this.value)">${part.notes}</textarea>
+                        <div class="help-text">Internal notes, ideas, and reminders for this section</div>
+                    </div>
+                `;
+                
+                mainContent.appendChild(section);
+                renderContributors(index);
+            });
+        }
+
+        function createNotesSection() {
+            const mainContent = document.getElementById('mainContent');
+            const section = document.createElement('section');
+            section.id = 'notes';
+            section.className = 'section';
+            
+            section.innerHTML = `
+                <h2>General Notes</h2>
+                <div class="form-group">
+                    <label>Project-Wide Notes and Ideas</label>
+                    <textarea id="generalNotes" oninput="data.generalNotes = this.value; autoSave()" style="min-height: 300px;">${data.generalNotes}</textarea>
+                    <div class="help-text">Overall project notes, reminders, and coordination items</div>
+                </div>
+            `;
+            
+            mainContent.appendChild(section);
+        }
+
+        function createManageSection() {
+            const mainContent = document.getElementById('mainContent');
+            const section = document.createElement('section');
+            section.id = 'manage';
+            section.className = 'section';
+            
+            section.innerHTML = `
+                <h2>Manage Parts</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
+                    Add, remove, rename, or reorder the parts of your volume. Changes are saved automatically.
+                </p>
+                
+                <div id="partsList"></div>
+                
+                <button class="btn" onclick="addNewPart()">+ Add New Part</button>
+            `;
+            
+            mainContent.appendChild(section);
+            renderPartsList();
+        }
+
+        function renderPartsList() {
+            const container = document.getElementById('partsList');
+            if (!container) return;
+            
+            container.innerHTML = data.parts.map((part, index) => {
+                const label = part.isConclusion ? 'Conclusion' : `Part ${index + 1}`;
+                return `
+                    <div class="manage-item">
+                        <span class="drag-handle" title="Drag to reorder">⋮⋮</span>
+                        <strong style="min-width: 100px;">${label}</strong>
+                        <input type="text" value="${part.title}" 
+                               onchange="updatePartTitle(${index}, this.value)"
+                               placeholder="Part title">
+                        <div class="manage-buttons">
+                            ${!part.isConclusion ? `
+                                <button class="btn btn-small" onclick="toggleConclusion(${index})" title="Mark as Conclusion">
+                                    📝 Conclusion
+                                </button>
+                            ` : ''}
+                            <button class="btn btn-small" onclick="movePartUp(${index})" ${index === 0 ? 'disabled' : ''}>↑</button>
+                            <button class="btn btn-small" onclick="movePartDown(${index})" ${index === data.parts.length - 1 ? 'disabled' : ''}>↓</button>
+                            <button class="btn btn-small btn-danger" onclick="deletePart(${index})" ${data.parts.length <= 1 ? 'disabled' : ''}>Delete</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function addNewPart() {
+            const newPart = {
+                title: "New Part",
+                summary: "",
+                questions: "",
+                contributors: [],
+                notes: "",
+                isConclusion: false
+            };
+            data.parts.push(newPart);
+            autoSave();
+            refreshInterface();
+            renderPartsList();
+        }
+
+        function updatePartTitle(index, newTitle) {
+            data.parts[index].title = newTitle;
+            autoSave();
+            refreshInterface();
+            renderPartsList();
+        }
+
+        function toggleConclusion(index) {
+            // Remove conclusion flag from all parts
+            data.parts.forEach(p => p.isConclusion = false);
+            // Set this part as conclusion
+            data.parts[index].isConclusion = true;
+            autoSave();
+            refreshInterface();
+            renderPartsList();
+        }
+
+        function movePartUp(index) {
+            if (index === 0) return;
+            [data.parts[index], data.parts[index - 1]] = [data.parts[index - 1], data.parts[index]];
+            autoSave();
+            refreshInterface();
+            renderPartsList();
+        }
+
+        function movePartDown(index) {
+            if (index === data.parts.length - 1) return;
+            [data.parts[index], data.parts[index + 1]] = [data.parts[index + 1], data.parts[index]];
+            autoSave();
+            refreshInterface();
+            renderPartsList();
+        }
+
+        function deletePart(index) {
+            if (data.parts.length <= 1) {
+                alert('You must have at least one part in your volume.');
+                return;
+            }
+            if (confirm(`Are you sure you want to delete "${data.parts[index].title}"? This cannot be undone.`)) {
+                data.parts.splice(index, 1);
+                autoSave();
+                refreshInterface();
+                renderPartsList();
+            }
+        }
+
+        function showSection(sectionId) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            
+            document.getElementById(sectionId).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function updatePartData(index, field, value) {
+            data.parts[index][field] = value;
+            autoSave();
+            updateStats();
+        }
+
+        function addContributor(partIndex) {
+            data.parts[partIndex].contributors.push({ name: '', institution: '' });
+            renderContributors(partIndex);
+            autoSave();
+        }
+
+        function removeContributor(partIndex, contribIndex) {
+            data.parts[partIndex].contributors.splice(contribIndex, 1);
+            renderContributors(partIndex);
+            autoSave();
+        }
+
+        function updateContributor(partIndex, contribIndex, field, value) {
+            data.parts[partIndex].contributors[contribIndex][field] = value;
+            autoSave();
+        }
+
+        function renderContributors(partIndex) {
+            const part = data.parts[partIndex];
+            const sectionId = part.isConclusion ? 'conclusion' : `part${partIndex}`;
+            const container = document.getElementById(`${sectionId}-contributors`);
+            if (!container) return;
+            
+            container.innerHTML = part.contributors.map((c, i) => `
+                <div class="contributor-item">
+                    <input type="text" placeholder="Name" value="${c.name}" 
+                           oninput="updateContributor(${partIndex}, ${i}, 'name', this.value)">
+                    <input type="text" placeholder="Institution" value="${c.institution}" 
+                           oninput="updateContributor(${partIndex}, ${i}, 'institution', this.value)">
+                    <button class="btn btn-small btn-secondary" onclick="removeContributor(${partIndex}, ${i})">×</button>
+                </div>
+            `).join('');
+        }
+
+        function updateStats() {
+            const completed = data.parts.filter(p => p.summary && p.questions).length;
+            document.getElementById('partsCompleted').textContent = `${completed}/${data.parts.length}`;
+        }
+
+        function autoSave() {
+            saveData(true);
+        }
+
+        function saveData(silent = false) {
+            data.projectSummary = document.getElementById('projectSummary').value;
+            localStorage.setItem('editorWorkspace', JSON.stringify(data));
+            updateLastSaved();
+            if (!silent) {
+                alert('Data saved successfully!');
+            }
+        }
+
+        function loadData() {
+            const saved = localStorage.getItem('editorWorkspace');
+            if (saved) {
+                data = JSON.parse(saved);
+            }
+            document.getElementById('projectSummary').value = data.projectSummary || '';
+        }
+
+        function updateLastSaved() {
+            const now = new Date().toLocaleString();
+            document.getElementById('lastSaved').textContent = `Last saved: ${now}`;
+        }
+
+        function exportJSON() {
+            const dataStr = JSON.stringify(data, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            saveAs(blob, 'research-agenda-backup.json');
+        }
+
+        function importData() {
+            document.getElementById('fileInput').click();
+        }
+
+        function handleFileImport(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    data = JSON.parse(e.target.result);
+                    localStorage.setItem('editorWorkspace', JSON.stringify(data));
+                    location.reload();
+                } catch (err) {
+                    alert('Error importing file. Please ensure it is a valid JSON file.');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function exportMarkdown() {
+            let md = `# ${data.book.title}\n\n`;
+            md += `**Editors:** ${data.book.editors.join(', ')}\n`;
+            md += `**Publisher:** Edward Elgar Publishing (Elgar Research Agendas series)\n`;
+            md += `**Deadline:** ${data.book.deadline}\n`;
+            md += `**Word Limit:** ${data.book.word_limit.toLocaleString()} words\n\n`;
+
+            if (data.projectSummary) {
+                md += `## Project Summary\n\n${data.projectSummary}\n\n`;
+            }
+
+            data.parts.forEach(part => {
+                md += `## ${part.isConclusion ? 'Conclusion' : `Part ${data.parts.indexOf(part) + 1}`}: ${part.title}\n\n`;
+                if (part.summary) md += `**Focus:** ${part.summary}\n\n`;
+                if (part.questions) {
+                    md += `**Guiding Questions:**\n${part.questions.split('\n').map(q => `- ${q}`).join('\n')}\n\n`;
+                }
+                if (part.contributors.length > 0) {
+                    md += `**Potential Contributors:**\n`;
+                    part.contributors.forEach(c => {
+                        md += `- ${c.name}${c.institution ? ` (${c.institution})` : ''}\n`;
+                    });
+                    md += '\n';
+                }
+                if (part.notes) md += `**Editorial Notes:** ${part.notes}\n\n`;
+            });
+
+            if (data.generalNotes) {
+                md += `## General Notes\n\n${data.generalNotes}\n`;
+            }
+
+            const blob = new Blob([md], { type: 'text/markdown' });
+            saveAs(blob, 'research-agenda-outline.md');
+        }
+
+        function exportWord() {
+            const { Document, Paragraph, TextRun, HeadingLevel, AlignmentType } = docx;
+
+            const children = [
+                new Paragraph({
+                    text: data.book.title,
+                    heading: HeadingLevel.HEADING_1,
+                    alignment: AlignmentType.CENTER
+                }),
+                new Paragraph({
+                    children: [
+                        new TextRun({ text: `Editors: ${data.book.editors.join(', ')}`, italics: true })
+                    ]
+                }),
+                new Paragraph({
+                    children: [
+                        new TextRun({ text: `Publisher: Edward Elgar Publishing`, italics: true })
+                    ]
+                }),
+                new Paragraph({
+                    children: [
+                        new TextRun({ text: `Deadline: ${data.book.deadline}`, italics: true })
+                    ]
+                }),
+                new Paragraph({ text: '' })
+            ];
+
+            if (data.projectSummary) {
+                children.push(
+                    new Paragraph({ text: 'Project Summary', heading: HeadingLevel.HEADING_2 }),
+                    new Paragraph({ text: data.projectSummary }),
+                    new Paragraph({ text: '' })
+                );
+            }
+
+            data.parts.forEach(part => {
+                const partIndex = data.parts.indexOf(part);
+                children.push(
+                    new Paragraph({
+                        text: `${part.isConclusion ? 'Conclusion' : `Part ${partIndex + 1}`}: ${part.title}`,
+                        heading: HeadingLevel.HEADING_2
+                    })
+                );
+                if (part.summary) {
+                    children.push(new Paragraph({ text: `Focus: ${part.summary}`, bold: true }));
+                }
+                if (part.questions) {
+                    children.push(new Paragraph({ text: 'Guiding Questions:', bold: true }));
+                    part.questions.split('\n').forEach(q => {
+                        children.push(new Paragraph({ text: `• ${q}` }));
+                    });
+                }
+                if (part.contributors.length > 0) {
+                    children.push(new Paragraph({ text: 'Potential Contributors:', bold: true }));
+                    part.contributors.forEach(c => {
+                        children.push(new Paragraph({ text: `• ${c.name}${c.institution ? ` (${c.institution})` : ''}` }));
+                    });
+                }
+                if (part.notes) {
+                    children.push(new Paragraph({ text: `Editorial Notes: ${part.notes}`, italics: true }));
+                }
+                children.push(new Paragraph({ text: '' }));
+            });
+
+            const doc = new Document({ sections: [{ children }] });
+            docx.Packer.toBlob(doc).then(blob => {
+                saveAs(blob, 'research-agenda-outline.docx');
+            });
+        }
+
+        function exportPDF() {
+            const element = document.createElement('div');
+            element.style.padding = '40px';
+            element.style.fontFamily = 'Georgia, serif';
+            element.style.maxWidth = '800px';
+
+            let html = `
+                <h1 style="text-align: center; color: #4a7c9e;">${data.book.title}</h1>
+                <p style="text-align: center; font-style: italic;">Editors: ${data.book.editors.join(', ')}</p>
+                <p style="text-align: center; font-style: italic;">Publisher: Edward Elgar Publishing</p>
+                <p style="text-align: center; font-style: italic;">Deadline: ${data.book.deadline}</p>
+                <hr style="margin: 30px 0;">
+            `;
+
+            if (data.projectSummary) {
+                html += `<h2>Project Summary</h2><p>${data.projectSummary}</p>`;
+            }
+
+            data.parts.forEach(part => {
+                const partIndex = data.parts.indexOf(part);
+                html += `<h2>${part.isConclusion ? 'Conclusion' : `Part ${partIndex + 1}`}: ${part.title}</h2>`;
+                if (part.summary) html += `<p><strong>Focus:</strong> ${part.summary}</p>`;
+                if (part.questions) {
+                    html += `<p><strong>Guiding Questions:</strong></p><ul>`;
+                    part.questions.split('\n').forEach(q => {
+                        html += `<li>${q}</li>`;
+                    });
+                    html += `</ul>`;
+                }
+                if (part.contributors.length > 0) {
+                    html += `<p><strong>Potential Contributors:</strong></p><ul>`;
+                    part.contributors.forEach(c => {
+                        html += `<li>${c.name}${c.institution ? ` (${c.institution})` : ''}</li>`;
+                    });
+                    html += `</ul>`;
+                }
+                if (part.notes) html += `<p><em>Editorial Notes: ${part.notes}</em></p>`;
+            });
+
+            element.innerHTML = html;
+
+            const opt = {
+                margin: 1,
+                filename: 'research-agenda-outline.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+            };
+
+            html2pdf().set(opt).from(element).save();
+        }
+
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            document.getElementById('darkModeToggle').classList.toggle('active');
+            localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
+        }
+
+        function adjustFontSize(delta) {
+            currentFontSize += delta;
+            currentFontSize = Math.max(12, Math.min(24, currentFontSize));
+            document.body.style.fontSize = currentFontSize + 'px';
+            localStorage.setItem('fontSize', currentFontSize);
+        }
+
+        // Load preferences
+        if (localStorage.getItem('darkMode') === 'true') {
+            toggleDarkMode();
+        }
+        if (localStorage.getItem('fontSize')) {
+            currentFontSize = parseInt(localStorage.getItem('fontSize'));
+            document.body.style.fontSize = currentFontSize + 'px';
+        }
+
+        // Auto-save every 30 seconds
+        setInterval(() => {
+            autoSave();
+        }, 30000);
+    </script>
+</body>
+</html>
