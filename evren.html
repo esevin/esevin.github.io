@@ -1,4 +1,9 @@
-<!DOCTYPE html>
+if (part.contributors.length > 0) {
+                    html += `<p><strong>Potential Contributors:</strong></p><ul>`;
+                    part.contributors.forEach(c => {
+                        let contribHTML = `${c.name}${c.institution ? ` (${c.institution})` : ''}`;
+                        if (c.proposedTitle) contribHTML += ` - "${c.proposedTitle}"`;
+                        if (c.status<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -355,6 +360,7 @@
             font-weight: 600;
         }
 
+        .status-notinvited { background: #f5f5f5; color: #757575; }
         .status-invited { background: #e3f2fd; color: #1976d2; }
         .status-confirmed { background: #e8f5e9; color: #388e3c; }
         .status-abstract { background: #fff3e0; color: #f57c00; }
@@ -824,11 +830,12 @@
                 name: '',
                 institution: '',
                 email: '',
+                proposedTitle: '',
                 initialContactDate: '',
                 firstFollowUpDate: '',
                 secondFollowUpDate: '',
                 responseDate: '',
-                status: 'invited',
+                status: 'notinvited',
                 abstractSubmitted: false,
                 abstractSubmittedDate: '',
                 abstractApproved: false,
@@ -877,8 +884,18 @@
             }
             
             container.innerHTML = part.contributors.map((c, i) => {
-                const statusClass = `status-${c.status || 'invited'}`;
-                const statusLabel = (c.status || 'invited').charAt(0).toUpperCase() + (c.status || 'invited').slice(1);
+                const statusClass = `status-${c.status || 'notinvited'}`;
+                const statusLabels = {
+                    'notinvited': 'Not Invited Yet',
+                    'invited': 'Invited',
+                    'confirmed': 'Confirmed',
+                    'abstract': 'Abstract Stage',
+                    'draft': 'Draft Stage',
+                    'revisions': 'Revisions',
+                    'complete': 'Complete',
+                    'declined': 'Declined'
+                };
+                const statusLabel = statusLabels[c.status || 'notinvited'];
                 
                 return `
                     <div class="contributor-card">
@@ -920,8 +937,16 @@
                             </div>
                             
                             <div class="field-group">
+                                <label class="field-label">Proposed Chapter Title</label>
+                                <input type="text" value="${c.proposedTitle || ''}" 
+                                       oninput="updateContributor(${partIndex}, ${i}, 'proposedTitle', this.value)"
+                                       placeholder="Chapter or contribution title">
+                            </div>
+                            
+                            <div class="field-group">
                                 <label class="field-label">Status</label>
                                 <select onchange="updateContributor(${partIndex}, ${i}, 'status', this.value); renderContributors(${partIndex})">
+                                    <option value="notinvited" ${c.status === 'notinvited' ? 'selected' : ''}>Not Invited Yet</option>
                                     <option value="invited" ${c.status === 'invited' ? 'selected' : ''}>Invited</option>
                                     <option value="confirmed" ${c.status === 'confirmed' ? 'selected' : ''}>Confirmed</option>
                                     <option value="abstract" ${c.status === 'abstract' ? 'selected' : ''}>Abstract Stage</option>
@@ -1130,6 +1155,7 @@
                     md += `**Potential Contributors:**\n`;
                     part.contributors.forEach(c => {
                         md += `- ${c.name}${c.institution ? ` (${c.institution})` : ''}`;
+                        if (c.proposedTitle) md += ` - "${c.proposedTitle}"`;
                         if (c.status) md += ` - Status: ${c.status}`;
                         if (c.email) md += ` - Email: ${c.email}`;
                         md += '\n';
@@ -1203,6 +1229,7 @@
                     children.push(new Paragraph({ text: 'Potential Contributors:', bold: true }));
                     part.contributors.forEach(c => {
                         let contribText = `• ${c.name}${c.institution ? ` (${c.institution})` : ''}`;
+                        if (c.proposedTitle) contribText += ` - "${c.proposedTitle}"`;
                         if (c.status) contribText += ` - Status: ${c.status}`;
                         if (c.email) contribText += ` - ${c.email}`;
                         children.push(new Paragraph({ text: contribText }));
