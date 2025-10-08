@@ -289,7 +289,105 @@
         .contributors-list {
             display: flex;
             flex-direction: column;
+            gap: 1rem;
+        }
+
+        .contributor-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 1rem;
+        }
+
+        .contributor-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .contributor-name {
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: var(--accent);
+        }
+
+        .contributor-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .field-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .field-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .field-group input,
+        .field-group select {
+            padding: 0.5rem;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-size: 0.9rem;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+        }
+
+        .field-group input[type="date"] {
+            font-family: inherit;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .status-invited { background: #e3f2fd; color: #1976d2; }
+        .status-confirmed { background: #e8f5e9; color: #388e3c; }
+        .status-abstract { background: #fff3e0; color: #f57c00; }
+        .status-draft { background: #f3e5f5; color: #7b1fa2; }
+        .status-revisions { background: #fff9c4; color: #f57f17; }
+        .status-complete { background: #c8e6c9; color: #2e7d32; }
+        .status-declined { background: #ffebee; color: #c62828; }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
             gap: 0.5rem;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .contributor-notes {
+            margin-top: 1rem;
+        }
+
+        .contributor-notes textarea {
+            width: 100%;
+            min-height: 80px;
+            padding: 0.5rem;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 0.9rem;
         }
 
         .contributor-item {
@@ -722,7 +820,30 @@
         }
 
         function addContributor(partIndex) {
-            data.parts[partIndex].contributors.push({ name: '', institution: '' });
+            data.parts[partIndex].contributors.push({
+                name: '',
+                institution: '',
+                email: '',
+                initialContactDate: '',
+                firstFollowUpDate: '',
+                secondFollowUpDate: '',
+                responseDate: '',
+                status: 'invited',
+                abstractSubmitted: false,
+                abstractSubmittedDate: '',
+                abstractApproved: false,
+                abstractApprovedDate: '',
+                draftSubmitted: false,
+                draftSubmittedDate: '',
+                revisionsRequested: false,
+                revisionsRequestedDate: '',
+                finalDraftSubmitted: false,
+                finalDraftSubmittedDate: '',
+                assignedWordCount: '',
+                isPriority: false,
+                isBackup: false,
+                notes: ''
+            });
             renderContributors(partIndex);
             autoSave();
         }
@@ -734,7 +855,13 @@
         }
 
         function updateContributor(partIndex, contribIndex, field, value) {
-            data.parts[partIndex].contributors[contribIndex][field] = value;
+            if (field === 'abstractSubmitted' || field === 'abstractApproved' || 
+                field === 'draftSubmitted' || field === 'revisionsRequested' || 
+                field === 'finalDraftSubmitted' || field === 'isPriority' || field === 'isBackup') {
+                data.parts[partIndex].contributors[contribIndex][field] = value === 'true' || value === true;
+            } else {
+                data.parts[partIndex].contributors[contribIndex][field] = value;
+            }
             autoSave();
         }
 
@@ -744,15 +871,184 @@
             const container = document.getElementById(`${sectionId}-contributors`);
             if (!container) return;
             
-            container.innerHTML = part.contributors.map((c, i) => `
-                <div class="contributor-item">
-                    <input type="text" placeholder="Name" value="${c.name}" 
-                           oninput="updateContributor(${partIndex}, ${i}, 'name', this.value)">
-                    <input type="text" placeholder="Institution" value="${c.institution}" 
-                           oninput="updateContributor(${partIndex}, ${i}, 'institution', this.value)">
-                    <button class="btn btn-small btn-secondary" onclick="removeContributor(${partIndex}, ${i})">×</button>
-                </div>
-            `).join('');
+            if (part.contributors.length === 0) {
+                container.innerHTML = '<p style="color: var(--text-secondary); font-style: italic;">No contributors added yet.</p>';
+                return;
+            }
+            
+            container.innerHTML = part.contributors.map((c, i) => {
+                const statusClass = `status-${c.status || 'invited'}`;
+                const statusLabel = (c.status || 'invited').charAt(0).toUpperCase() + (c.status || 'invited').slice(1);
+                
+                return `
+                    <div class="contributor-card">
+                        <div class="contributor-header">
+                            <div>
+                                <div class="contributor-name">${c.name || 'Unnamed Contributor'}</div>
+                                <div style="font-size: 0.9rem; color: var(--text-secondary);">
+                                    ${c.institution || 'No institution'}
+                                    ${c.isPriority ? ' <span style="color: #f57c00;">★ Priority</span>' : ''}
+                                    ${c.isBackup ? ' <span style="color: var(--text-secondary);">○ Backup</span>' : ''}
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                <span class="status-badge ${statusClass}">${statusLabel}</span>
+                                <button class="btn btn-small btn-danger" onclick="removeContributor(${partIndex}, ${i})">Delete</button>
+                            </div>
+                        </div>
+                        
+                        <div class="contributor-grid">
+                            <div class="field-group">
+                                <label class="field-label">Name *</label>
+                                <input type="text" value="${c.name || ''}" 
+                                       oninput="updateContributor(${partIndex}, ${i}, 'name', this.value)"
+                                       placeholder="Full name">
+                            </div>
+                            
+                            <div class="field-group">
+                                <label class="field-label">Institution</label>
+                                <input type="text" value="${c.institution || ''}" 
+                                       oninput="updateContributor(${partIndex}, ${i}, 'institution', this.value)"
+                                       placeholder="University or organization">
+                            </div>
+                            
+                            <div class="field-group">
+                                <label class="field-label">Email</label>
+                                <input type="email" value="${c.email || ''}" 
+                                       oninput="updateContributor(${partIndex}, ${i}, 'email', this.value)"
+                                       placeholder="email@example.com">
+                            </div>
+                            
+                            <div class="field-group">
+                                <label class="field-label">Status</label>
+                                <select onchange="updateContributor(${partIndex}, ${i}, 'status', this.value); renderContributors(${partIndex})">
+                                    <option value="invited" ${c.status === 'invited' ? 'selected' : ''}>Invited</option>
+                                    <option value="confirmed" ${c.status === 'confirmed' ? 'selected' : ''}>Confirmed</option>
+                                    <option value="abstract" ${c.status === 'abstract' ? 'selected' : ''}>Abstract Stage</option>
+                                    <option value="draft" ${c.status === 'draft' ? 'selected' : ''}>Draft Stage</option>
+                                    <option value="revisions" ${c.status === 'revisions' ? 'selected' : ''}>Revisions</option>
+                                    <option value="complete" ${c.status === 'complete' ? 'selected' : ''}>Complete</option>
+                                    <option value="declined" ${c.status === 'declined' ? 'selected' : ''}>Declined</option>
+                                </select>
+                            </div>
+                            
+                            <div class="field-group">
+                                <label class="field-label">Assigned Word Count</label>
+                                <input type="number" value="${c.assignedWordCount || ''}" 
+                                       oninput="updateContributor(${partIndex}, ${i}, 'assignedWordCount', this.value)"
+                                       placeholder="e.g., 8000">
+                            </div>
+                            
+                            <div class="field-group">
+                                <label class="field-label">Priority/Backup</label>
+                                <div style="display: flex; gap: 1rem;">
+                                    <div class="checkbox-group">
+                                        <input type="checkbox" ${c.isPriority ? 'checked' : ''} 
+                                               onchange="updateContributor(${partIndex}, ${i}, 'isPriority', this.checked); renderContributors(${partIndex})">
+                                        <span style="font-size: 0.9rem;">Priority</span>
+                                    </div>
+                                    <div class="checkbox-group">
+                                        <input type="checkbox" ${c.isBackup ? 'checked' : ''} 
+                                               onchange="updateContributor(${partIndex}, ${i}, 'isBackup', this.checked); renderContributors(${partIndex})">
+                                        <span style="font-size: 0.9rem;">Backup</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <h4 style="margin: 1rem 0 0.5rem 0; font-size: 1rem; color: var(--text-primary);">Correspondence Timeline</h4>
+                        <div class="contributor-grid">
+                            <div class="field-group">
+                                <label class="field-label">Initial Contact</label>
+                                <input type="date" value="${c.initialContactDate || ''}" 
+                                       onchange="updateContributor(${partIndex}, ${i}, 'initialContactDate', this.value)">
+                            </div>
+                            
+                            <div class="field-group">
+                                <label class="field-label">First Follow-up</label>
+                                <input type="date" value="${c.firstFollowUpDate || ''}" 
+                                       onchange="updateContributor(${partIndex}, ${i}, 'firstFollowUpDate', this.value)">
+                            </div>
+                            
+                            <div class="field-group">
+                                <label class="field-label">Second Follow-up</label>
+                                <input type="date" value="${c.secondFollowUpDate || ''}" 
+                                       onchange="updateContributor(${partIndex}, ${i}, 'secondFollowUpDate', this.value)">
+                            </div>
+                            
+                            <div class="field-group">
+                                <label class="field-label">Response Received</label>
+                                <input type="date" value="${c.responseDate || ''}" 
+                                       onchange="updateContributor(${partIndex}, ${i}, 'responseDate', this.value)">
+                            </div>
+                        </div>
+                        
+                        <h4 style="margin: 1rem 0 0.5rem 0; font-size: 1rem; color: var(--text-primary);">Submission Milestones</h4>
+                        <div class="contributor-grid">
+                            <div class="field-group">
+                                <div class="checkbox-group">
+                                    <input type="checkbox" ${c.abstractSubmitted ? 'checked' : ''} 
+                                           onchange="updateContributor(${partIndex}, ${i}, 'abstractSubmitted', this.checked)">
+                                    <label class="field-label" style="margin: 0;">Abstract Submitted</label>
+                                </div>
+                                <input type="date" value="${c.abstractSubmittedDate || ''}" 
+                                       onchange="updateContributor(${partIndex}, ${i}, 'abstractSubmittedDate', this.value)"
+                                       style="margin-top: 0.25rem;">
+                            </div>
+                            
+                            <div class="field-group">
+                                <div class="checkbox-group">
+                                    <input type="checkbox" ${c.abstractApproved ? 'checked' : ''} 
+                                           onchange="updateContributor(${partIndex}, ${i}, 'abstractApproved', this.checked)">
+                                    <label class="field-label" style="margin: 0;">Abstract Approved</label>
+                                </div>
+                                <input type="date" value="${c.abstractApprovedDate || ''}" 
+                                       onchange="updateContributor(${partIndex}, ${i}, 'abstractApprovedDate', this.value)"
+                                       style="margin-top: 0.25rem;">
+                            </div>
+                            
+                            <div class="field-group">
+                                <div class="checkbox-group">
+                                    <input type="checkbox" ${c.draftSubmitted ? 'checked' : ''} 
+                                           onchange="updateContributor(${partIndex}, ${i}, 'draftSubmitted', this.checked)">
+                                    <label class="field-label" style="margin: 0;">Draft Submitted</label>
+                                </div>
+                                <input type="date" value="${c.draftSubmittedDate || ''}" 
+                                       onchange="updateContributor(${partIndex}, ${i}, 'draftSubmittedDate', this.value)"
+                                       style="margin-top: 0.25rem;">
+                            </div>
+                            
+                            <div class="field-group">
+                                <div class="checkbox-group">
+                                    <input type="checkbox" ${c.revisionsRequested ? 'checked' : ''} 
+                                           onchange="updateContributor(${partIndex}, ${i}, 'revisionsRequested', this.checked)">
+                                    <label class="field-label" style="margin: 0;">Revisions Requested</label>
+                                </div>
+                                <input type="date" value="${c.revisionsRequestedDate || ''}" 
+                                       onchange="updateContributor(${partIndex}, ${i}, 'revisionsRequestedDate', this.value)"
+                                       style="margin-top: 0.25rem;">
+                            </div>
+                            
+                            <div class="field-group">
+                                <div class="checkbox-group">
+                                    <input type="checkbox" ${c.finalDraftSubmitted ? 'checked' : ''} 
+                                           onchange="updateContributor(${partIndex}, ${i}, 'finalDraftSubmitted', this.checked)">
+                                    <label class="field-label" style="margin: 0;">Final Draft Submitted</label>
+                                </div>
+                                <input type="date" value="${c.finalDraftSubmittedDate || ''}" 
+                                       onchange="updateContributor(${partIndex}, ${i}, 'finalDraftSubmittedDate', this.value)"
+                                       style="margin-top: 0.25rem;">
+                            </div>
+                        </div>
+                        
+                        <div class="contributor-notes">
+                            <label class="field-label">Notes & Comments</label>
+                            <textarea oninput="updateContributor(${partIndex}, ${i}, 'notes', this.value)" 
+                                      placeholder="Internal notes about this contributor...">${c.notes || ''}</textarea>
+                        </div>
+                    </div>
+                `;
+            }).join('');
         }
 
         function updateStats() {
@@ -833,7 +1129,10 @@
                 if (part.contributors.length > 0) {
                     md += `**Potential Contributors:**\n`;
                     part.contributors.forEach(c => {
-                        md += `- ${c.name}${c.institution ? ` (${c.institution})` : ''}\n`;
+                        md += `- ${c.name}${c.institution ? ` (${c.institution})` : ''}`;
+                        if (c.status) md += ` - Status: ${c.status}`;
+                        if (c.email) md += ` - Email: ${c.email}`;
+                        md += '\n';
                     });
                     md += '\n';
                 }
@@ -903,7 +1202,10 @@
                 if (part.contributors.length > 0) {
                     children.push(new Paragraph({ text: 'Potential Contributors:', bold: true }));
                     part.contributors.forEach(c => {
-                        children.push(new Paragraph({ text: `• ${c.name}${c.institution ? ` (${c.institution})` : ''}` }));
+                        let contribText = `• ${c.name}${c.institution ? ` (${c.institution})` : ''}`;
+                        if (c.status) contribText += ` - Status: ${c.status}`;
+                        if (c.email) contribText += ` - ${c.email}`;
+                        children.push(new Paragraph({ text: contribText }));
                     });
                 }
                 if (part.notes) {
@@ -950,7 +1252,10 @@
                 if (part.contributors.length > 0) {
                     html += `<p><strong>Potential Contributors:</strong></p><ul>`;
                     part.contributors.forEach(c => {
-                        html += `<li>${c.name}${c.institution ? ` (${c.institution})` : ''}</li>`;
+                        let contribHTML = `${c.name}${c.institution ? ` (${c.institution})` : ''}`;
+                        if (c.status) contribHTML += ` - Status: ${c.status}`;
+                        if (c.email) contribHTML += ` - ${c.email}`;
+                        html += `<li>${contribHTML}</li>`;
                     });
                     html += `</ul>`;
                 }
