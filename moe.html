@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Margin of Error Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .hover-lift:hover {
+            transform: translateY(-2px);
+            transition: transform 0.2s ease;
+        }
+        .result-box {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="max-w-4xl mx-auto p-6 my-8">
+        <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+            <div class="gradient-bg text-white p-8 text-center">
+                <h1 class="text-4xl font-bold mb-3">Margin of Error Calculator</h1>
+                <p class="text-lg opacity-90">Calculate sampling error for your survey or poll</p>
+            </div>
+
+            <div class="p-8">
+                <!-- Input Section -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 hover-lift">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            Sample Size (n)
+                            <span class="text-red-500">*</span>
+                        </label>
+                        <input 
+                            type="number" 
+                            id="sample-size" 
+                            value="400"
+                            min="1"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-md text-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            placeholder="Enter sample size"
+                        />
+                        <p class="text-xs text-gray-600 mt-2">Number of respondents in your survey</p>
+                    </div>
+
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 hover-lift">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            Population Size (N)
+                        </label>
+                        <input 
+                            type="number" 
+                            id="population-size" 
+                            value="19401"
+                            min="1"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-md text-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            placeholder="Enter population size"
+                        />
+                        <p class="text-xs text-gray-600 mt-2">Total population you're surveying</p>
+                    </div>
+
+                    <div class="bg-purple-50 border border-purple-200 rounded-lg p-6 hover-lift">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            Confidence Level
+                            <span class="text-red-500">*</span>
+                        </label>
+                        <select 
+                            id="confidence-level"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-md text-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        >
+                            <option value="90">90% Confidence</option>
+                            <option value="95" selected>95% Confidence</option>
+                            <option value="99">99% Confidence</option>
+                        </select>
+                        <p class="text-xs text-gray-600 mt-2">How confident you want to be in results</p>
+                    </div>
+
+                    <div class="bg-purple-50 border border-purple-200 rounded-lg p-6 hover-lift">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            Population Proportion (p)
+                        </label>
+                        <div class="flex items-center gap-2">
+                            <input 
+                                type="number" 
+                                id="proportion" 
+                                value="50"
+                                min="0"
+                                max="100"
+                                step="1"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-md text-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                            />
+                            <span class="text-2xl font-bold text-gray-700">%</span>
+                        </div>
+                        <p class="text-xs text-gray-600 mt-2">Use 50% for maximum margin of error</p>
+                    </div>
+                </div>
+
+                <!-- Calculate Button -->
+                <div class="flex justify-center mb-8">
+                    <button 
+                        id="calculate-btn"
+                        class="px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold text-lg rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+                    >
+                        <svg class="w-6 h-6 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                        </svg>
+                        Calculate Margin of Error
+                    </button>
+                </div>
+
+                <!-- Results Section -->
+                <div id="results-section" class="hidden">
+                    <div class="result-box text-white rounded-lg p-8 mb-6 text-center">
+                        <h2 class="text-2xl font-semibold mb-4">Margin of Error</h2>
+                        <div class="text-6xl font-bold mb-2">
+                            ± <span id="moe-result">0.0</span>%
+                        </div>
+                        <p class="text-lg opacity-90 mt-4">
+                            At <span id="conf-display">95</span>% confidence level
+                        </p>
+                    </div>
+
+                    <!-- Detailed Results -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                        <div class="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
+                            <div class="text-sm font-semibold text-gray-600 mb-2">Sample Size</div>
+                            <div class="text-3xl font-bold text-gray-900" id="display-sample">400</div>
+                        </div>
+                        <div class="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
+                            <div class="text-sm font-semibold text-gray-600 mb-2">Population</div>
+                            <div class="text-3xl font-bold text-gray-900" id="display-population">19,401</div>
+                        </div>
+                        <div class="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
+                            <div class="text-sm font-semibold text-gray-600 mb-2">Response Rate</div>
+                            <div class="text-3xl font-bold text-gray-900" id="display-rate">2.1%</div>
+                        </div>
+                    </div>
+
+                    <!-- Interpretation -->
+                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            What This Means
+                        </h3>
+                        <p class="text-gray-700 mb-3" id="interpretation-text">
+                            If your survey shows 60% support, you can be 95% confident that the true population value falls between 55.1% and 64.9%.
+                        </p>
+                        <p class="text-sm text-gray-600">
+                            <strong>Note:</strong> This calculation uses the finite population correction factor since your sample represents a significant portion of the total population.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Formula Explanation -->
+                <div class="mt-8 bg-gray-50 border border-gray-200 rounded-lg p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-3">How It Works</h3>
+                    <div class="text-sm text-gray-600 space-y-2">
+                        <p><strong>Margin of Error Formula:</strong></p>
+                        <p class="font-mono bg-white p-3 rounded border border-gray-300 text-center text-base">
+                            MOE = Z × √[(p × (1-p)) / n] × √[(N-n)/(N-1)]
+                        </p>
+                        <ul class="list-disc list-inside space-y-1 mt-3">
+                            <li><strong>Z</strong> = Z-score based on confidence level (1.645 for 90%, 1.96 for 95%, 2.576 for 99%)</li>
+                            <li><strong>p</strong> = Population proportion (as decimal, e.g., 0.50 for 50%)</li>
+                            <li><strong>n</strong> = Sample size</li>
+                            <li><strong>N</strong> = Population size</li>
+                            <li><strong>√[(N-n)/(N-1)]</strong> = Finite population correction factor</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Z-scores for different confidence levels
+        const Z_SCORES = {
+            90: 1.645,
+            95: 1.96,
+            99: 2.576
+        };
+
+        function calculateMarginOfError() {
+            // Get input values
+            const sampleSize = parseInt(document.getElementById('sample-size').value);
+            const populationSize = parseInt(document.getElementById('population-size').value);
+            const confidenceLevel = parseInt(document.getElementById('confidence-level').value);
+            const proportion = parseFloat(document.getElementById('proportion').value) / 100;
+
+            // Validate inputs
+            if (!sampleSize || sampleSize < 1) {
+                alert('Please enter a valid sample size');
+                return;
+            }
+
+            if (!populationSize || populationSize < sampleSize) {
+                alert('Population size must be greater than or equal to sample size');
+                return;
+            }
+
+            // Get Z-score
+            const z = Z_SCORES[confidenceLevel];
+
+            // Calculate standard error
+            const standardError = Math.sqrt((proportion * (1 - proportion)) / sampleSize);
+
+            // Calculate finite population correction factor
+            const fpc = Math.sqrt((populationSize - sampleSize) / (populationSize - 1));
+
+            // Calculate margin of error
+            const moe = z * standardError * fpc * 100; // Convert to percentage
+
+            // Calculate response rate
+            const responseRate = (sampleSize / populationSize) * 100;
+
+            // Display results
+            document.getElementById('moe-result').textContent = moe.toFixed(2);
+            document.getElementById('conf-display').textContent = confidenceLevel;
+            document.getElementById('display-sample').textContent = sampleSize.toLocaleString();
+            document.getElementById('display-population').textContent = populationSize.toLocaleString();
+            document.getElementById('display-rate').textContent = responseRate.toFixed(2) + '%';
+
+            // Update interpretation
+            const examplePercent = 60;
+            const lowerBound = examplePercent - moe;
+            const upperBound = examplePercent + moe;
+            document.getElementById('interpretation-text').textContent = 
+                `If your survey shows ${examplePercent}% support, you can be ${confidenceLevel}% confident that the true population value falls between ${lowerBound.toFixed(1)}% and ${upperBound.toFixed(1)}%.`;
+
+            // Show results section
+            document.getElementById('results-section').classList.remove('hidden');
+            
+            // Smooth scroll to results
+            document.getElementById('results-section').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        // Event listeners
+        document.getElementById('calculate-btn').addEventListener('click', calculateMarginOfError);
+
+        // Allow Enter key to calculate
+        ['sample-size', 'population-size', 'proportion'].forEach(id => {
+            document.getElementById(id).addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    calculateMarginOfError();
+                }
+            });
+        });
+
+        // Auto-calculate on page load to show example
+        window.addEventListener('DOMContentLoaded', calculateMarginOfError);
+    </script>
+</body>
+</html>
