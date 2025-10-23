@@ -182,14 +182,24 @@
 
         // Debounced render function - now also calculates automatically
         function debouncedRender() {
-            if (!autoCalculate) return; // Skip if manual mode
-            
             if (renderTimeout) {
                 clearTimeout(renderTimeout);
             }
             renderTimeout = setTimeout(() => {
                 calculateResults();
             }, 300); // Slightly longer delay for better UX
+        }
+
+        // Debounced category update - separate timeout for category changes
+        let categoryTimeout = null;
+        function debouncedCategoryUpdate() {
+            if (categoryTimeout) {
+                clearTimeout(categoryTimeout);
+            }
+            categoryTimeout = setTimeout(() => {
+                renderResponses(); // Only re-render the response section
+                calculateResults(); // And recalculate
+            }, 200);
         }
 
         function switchScale(scale) {
@@ -223,8 +233,8 @@
                     const fiveResponse = fivePointResponses.find(r => r.id === id);
                     if (threeResponse) threeResponse.category = value;
                     if (fiveResponse) fiveResponse.category = value;
-                    // Full render for category changes (affects labels)
-                    render();
+                    // Use debounced update for category changes too
+                    debouncedCategoryUpdate();
                 } else {
                     // Debounced render for numeric changes
                     debouncedRender();
@@ -645,8 +655,7 @@
         function render() {
             renderDemographics();
             renderResponses();
-            renderWeights();
-            renderResults();
+            calculateResults(); // Always calculate when doing full render
         }
 
         // Event listeners
@@ -663,6 +672,9 @@
             // Add demographic button
             document.getElementById('add-demographic-btn').addEventListener('click', addDemographic);
             
+            // Calculate button
+            document.getElementById('calculate-btn').addEventListener('click', calculateResults);
+            
             // Initial render
             updateScaleButtons();
             render();
@@ -670,4 +682,3 @@
     </script>
 </body>
 </html>
-                    
