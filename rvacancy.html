@@ -1,0 +1,286 @@
+<div id="vacancy-counter-app" aria-live="polite">
+  <style>
+    #vacancy-counter-app{font:14px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#111}
+    #vc-topbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin:8px 0 12px}
+    #vc-controls{display:flex;flex-wrap:wrap;gap:8px}
+    #vc-controls input[type="search"],#vc-controls select{padding:8px 10px;border:1px solid #ccc;border-radius:8px}
+    #vc-controls button{padding:8px 12px;border:1px solid #bbb;background:#f7f7f7;border-radius:8px;cursor:pointer}
+    #vc-controls button:hover{background:#eee}
+    .vc-chip{background:#f2f4f7;border-radius:10px;padding:4px 8px;font-size:12px}
+    .vc-pill{padding:.15em .6em;border-radius:999px;font-size:12px;white-space:nowrap}
+    .vc-pill.act{background:#ffe9e3;color:#5a200f}
+    .vc-pill.conf{background:#e6f3ff;color:#0b355b}
+    .vc-table-wrap{overflow:auto;border:1px solid #eee;border-radius:10px}
+    table.vc{width:100%;border-collapse:collapse}
+    .vc thead th{position:sticky;top:0;background:#fafafa;border-bottom:1px solid #eee;text-align:left;padding:10px;font-weight:600;cursor:pointer;user-select:none}
+    .vc tbody td{border-top:1px solid #f1f1f1;padding:10px;vertical-align:top}
+    .vc thead th[data-sort="asc"]::after{content:" ▲"}
+    .vc thead th[data-sort="desc"]::after{content:" ▼"}
+    #vc-loading{padding:12px;text-align:center;font-style:italic;color:#555}
+    #vc-error{display:none;margin-top:10px;color:#8b0000;background:#ffeeee;padding:8px;border:1px solid #f1c0c0;border-radius:8px}
+    #vc-pagination{display:flex;gap:6px;align-items:center;justify-content:flex-end;padding:8px 0}
+    #vc-pagination select,#vc-pagination button{padding:6px 8px;border:1px solid #ccc;border-radius:8px;background:#fff}
+    #vc-metrics{display:flex;flex-wrap:wrap;gap:12px;margin:8px 0 12px}
+  </style>
+
+  <div id="vc-topbar">
+    <div>
+      <h3 style="margin:0 0 4px 0;">Under Secretary for Public Diplomacy & Public Affairs — Vacancy Counter</h3>
+      <div id="vc-meta" style="font-size:12px;opacity:.8">Source: esevin.github.io · <span id="vc-asof">Loading…</span></div>
+    </div>
+    <div id="vc-controls">
+      <input id="vc-search" type="search" placeholder="Search name, notes…" />
+      <select id="vc-filter-role">
+        <option value="">All Roles</option>
+        <option value="Confirmed">Confirmed</option>
+        <option value="Acting">Acting</option>
+      </select>
+      <select id="vc-filter-admin">
+        <option value="">All Administrations</option>
+      </select>
+      <button id="vc-refresh" type="button">Refresh</button>
+    </div>
+  </div>
+
+  <div id="vc-metrics">
+    <span class="vc-chip" id="vc-count-total">Total: —</span>
+    <span class="vc-chip" id="vc-count-conf">Confirmed: —</span>
+    <span class="vc-chip" id="vc-count-act">Acting: —</span>
+    <span class="vc-chip" id="vc-avg-tenure">Avg tenure (days): —</span>
+  </div>
+
+  <div id="vc-loading">Loading data…</div>
+
+  <div class="vc-table-wrap" id="vc-table-wrap" style="display:none">
+    <table class="vc" id="vc-table">
+      <thead>
+        <tr>
+          <th data-key="Name">Name</th>
+          <th data-key="Role">Role</th>
+          <th data-key="StartDate">Start</th>
+          <th data-key="EndDate">End</th>
+          <th data-key="TenureDays" data-numeric="1">Tenure (days)</th>
+          <th data-key="Administration">Administration</th>
+          <th data-key="Notes">Notes</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div id="vc-pagination" aria-label="Pagination controls" style="display:none">
+    <label for="vc-page-size" style="font-size:12px">Rows:</label>
+    <select id="vc-page-size">
+      <option>10</option><option selected>25</option><option>50</option><option>All</option>
+    </select>
+    <div id="vc-page-buttons" style="margin-left:auto"></div>
+  </div>
+
+  <div id="vc-error"></div>
+
+  <script>
+  // --- CONFIG ---
+  const CSV_URL = "https://esevin.github.io/files/RUSData.csv"; // use HTTPS to avoid mixed-content
+
+  // --- CSV PARSER (handles quotes, commas, newlines) ---
+  function parseCSV(text){
+    const rows=[]; let i=0, f="", row=[], inQ=false;
+    while(i<text.length){
+      const c=text[i];
+      if(inQ){
+        if(c==='\"'){ if(text[i+1]==='\"'){f+='\"';i+=2;continue;} inQ=false;i++;continue; }
+        f+=c;i++;continue;
+      }else{
+        if(c==='\"'){ inQ=true;i++;continue; }
+        if(c===','){ row.push(f); f=""; i++; continue; }
+        if(c==='\n'){ row.push(f); rows.push(row); row=[]; f=""; i++; continue; }
+        if(c==='\r'){ i++; continue; }
+        f+=c;i++;
+      }
+    }
+    row.push(f); rows.push(row);
+    const header=(rows.shift()||[]).map(h=>h.trim());
+    return rows
+      .filter(r=>r && r.some(x=>x && x.trim()!==""))
+      .map(r=>{const o={}; header.forEach((h,j)=>o[h]= (r[j]??"").trim()); return o;});
+  }
+
+  // --- DATE & TENURE HELPERS (robust) ---
+  function parseDateFlexible(s){
+    if(!s) return null;
+    s = String(s).trim();
+    // YYYY-MM-DD quick path
+    const m = s.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$/);
+    if(m){ return new Date(Date.UTC(+m[1], +m[2]-1, +m[3])); }
+    // M/D/YYYY
+    const us = s.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})$/);
+    if(us){ const y=us[3].length===2? +("20"+us[3]): +us[3]; return new Date(Date.UTC(y, +us[1]-1, +us[2])); }
+    // Fallback to Date.parse (UTC normalize)
+    const d = new Date(s);
+    if(isNaN(d)) return null;
+    return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+  }
+  function fmtYMD(d){ if(!d) return ""; const y=d.getUTCFullYear(); const m=String(d.getUTCMonth()+1).padStart(2,'0'); const day=String(d.getUTCDate()).padStart(2,'0'); return `${y}-${m}-${day}`; }
+  function todayUTC(){ const n=new Date(); return new Date(Date.UTC(n.getUTCFullYear(), n.getUTCMonth(), n.getUTCDate())); }
+  function tenureDays(start, end){
+    const s = parseDateFlexible(start);
+    const e = end && end.trim() !== "" && end.trim().toLowerCase() !== "—" ? parseDateFlexible(end) : todayUTC();
+    if(!s || !e) return "";
+    const days = Math.round((e - s)/86400000);
+    return Math.max(0, days);
+  }
+
+  // --- UI STATE ---
+  let DATA=[], VIEW=[];
+  let sortKey="StartDate", sortDir="desc";
+  let page=1, pageSize=25;
+
+  // --- UTIL ---
+  const esc = s => (s??"").toString().replace(/[&<>"']/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]));
+
+  // --- RENDER ---
+  function renderFilters(){
+    const adminSel=document.getElementById("vc-filter-admin");
+    const admins=[...new Set(DATA.map(d=>d.Administration).filter(Boolean))].sort();
+    adminSel.innerHTML = '<option value="">All Administrations</option>'+admins.map(a=>`<option>${esc(a)}</option>`).join('');
+  }
+
+  function applyFilters(){
+    const q=document.getElementById("vc-search").value.toLowerCase();
+    const roleF=document.getElementById("vc-filter-role").value;
+    const adminF=document.getElementById("vc-filter-admin").value;
+    VIEW = DATA.filter(r=>{
+      const hitQ = !q || Object.values(r).join(" ").toLowerCase().includes(q);
+      const hitR = !roleF || r.Role===roleF;
+      const hitA = !adminF || r.Administration===adminF;
+      return hitQ && hitR && hitA;
+    });
+    page=1;
+    sortAndDraw();
+    drawMetrics();
+  }
+
+  function sortAndDraw(){
+    const numeric = (k)=> document.querySelector(`th[data-key="${k}"]`)?.dataset.numeric==="1";
+    const arr=[...VIEW].sort((a,b)=>{
+      let A=a[sortKey], B=b[sortKey];
+      if(sortKey.toLowerCase().includes("date")){
+        A = parseDateFlexible(A)?.getTime()||0; B = parseDateFlexible(B)?.getTime()||0;
+      } else if(numeric(sortKey)){ A=Number(A)||0; B=Number(B)||0; }
+      else { A=(A||"").toString().toLowerCase(); B=(B||"").toString().toLowerCase(); }
+      return sortDir==="asc" ? (A>B?1:A<B?-1:0) : (A<B?1:A>B?-1:0);
+    });
+    drawTable(arr);
+  }
+
+  function drawTable(arr){
+    const tbody=document.querySelector("#vc-table tbody");
+    const sizeSel=document.getElementById("vc-page-size");
+    pageSize = sizeSel.value==="All" ? Infinity : parseInt(sizeSel.value,10);
+    const total = arr.length;
+    const pages = pageSize===Infinity ? 1 : Math.max(1, Math.ceil(total/pageSize));
+    if(page>pages) page=pages;
+
+    const start = pageSize===Infinity ? 0 : (page-1)*pageSize;
+    const rows  = pageSize===Infinity ? arr : arr.slice(start, start+pageSize);
+
+    tbody.innerHTML = rows.map(r=>`
+      <tr>
+        <td>${esc(r.Name)}</td>
+        <td><span class="vc-pill ${r.Role==="Acting"?"act":"conf"}">${esc(r.Role)}</span></td>
+        <td>${esc(r.StartDate)}</td>
+        <td>${esc(r.EndDate)}</td>
+        <td style="text-align:right">${r.TenureDays??""}</td>
+        <td>${esc(r.Administration)}</td>
+        <td>${esc(r.Notes)}</td>
+      </tr>
+    `).join("");
+
+    // pagination
+    const pag = document.getElementById("vc-pagination");
+    const btns = document.getElementById("vc-page-buttons");
+    pag.style.display = pageSize===Infinity ? "none" : "flex";
+    if(pageSize===Infinity) { btns.innerHTML=""; return; }
+    const mk=(p,l,dis=false,cur=false)=>`<button type="button" ${dis?"disabled":""} data-p="${p}" aria-current="${cur?"page":"false"}">${l}</button>`;
+    let html = mk(1,"« First", page===1) + mk(Math.max(1,page-1),"‹ Prev", page===1);
+    const span=2, from=Math.max(1, page-span), to=Math.min(pages, page+span);
+    for(let i=from;i<=to;i++) html += mk(i,i,false,i===page);
+    html += mk(Math.min(pages,page+1),"Next ›", page===pages) + mk(pages,"Last »", page===pages);
+    btns.innerHTML=html;
+    btns.querySelectorAll("button").forEach(b=> b.onclick=()=>{ page=parseInt(b.dataset.p,10); sortAndDraw(); });
+  }
+
+  function drawMetrics(){
+    const conf = VIEW.filter(r=>r.Role==="Confirmed");
+    const act  = VIEW.filter(r=>r.Role==="Acting");
+    const nums = VIEW.map(r=>Number(r.TenureDays)).filter(n=>!isNaN(n));
+    const avg  = nums.length ? Math.round(nums.reduce((a,b)=>a+b,0)/nums.length) : 0;
+    document.getElementById("vc-count-total").textContent=`Total: ${VIEW.length}`;
+    document.getElementById("vc-count-conf").textContent =`Confirmed: ${conf.length}`;
+    document.getElementById("vc-count-act").textContent  =`Acting: ${act.length}`;
+    document.getElementById("vc-avg-tenure").textContent=`Avg tenure (days): ${avg}`;
+  }
+
+  function attachHandlers(){
+    document.getElementById("vc-search").oninput = applyFilters;
+    document.getElementById("vc-filter-role").onchange = applyFilters;
+    document.getElementById("vc-filter-admin").onchange = applyFilters;
+    document.getElementById("vc-page-size").onchange = ()=>{ page=1; sortAndDraw(); };
+    document.getElementById("vc-refresh").onclick = ()=> init(true);
+    document.querySelectorAll("#vc-table thead th").forEach(th=>{
+      th.onclick=()=>{
+        const key=th.dataset.key; if(!key) return;
+        if(sortKey===key) sortDir = (sortDir==="asc"?"desc":"asc");
+        else { sortKey=key; sortDir = key.toLowerCase().includes("date") ? "desc" : "asc"; }
+        document.querySelectorAll("#vc-table thead th").forEach(t=>t.removeAttribute("data-sort"));
+        th.setAttribute("data-sort", sortDir);
+        sortAndDraw();
+      };
+    });
+  }
+
+  function setAsOf(ts){
+    document.getElementById("vc-asof").textContent = new Date(ts).toLocaleString();
+  }
+
+  async function init(force=false){
+    const loading=document.getElementById("vc-loading");
+    const wrap=document.getElementById("vc-table-wrap");
+    const err=document.getElementById("vc-error");
+    loading.style.display="block"; wrap.style.display="none"; err.style.display="none"; err.textContent="";
+    try{
+      const res = await fetch(CSV_URL,{cache:"no-store"});
+      if(!res.ok) throw new Error(`HTTP ${res.status}`);
+      const text = await res.text();
+      setAsOf(Date.now());
+      const raw = parseCSV(text);
+      // Normalize expected headers: Name,Role,StartDate,EndDate,Administration,Notes
+      DATA = raw.map(r=>{
+        const s = r.StartDate ? fmtYMD(parseDateFlexible(r.StartDate)) : "";
+        const e = r.EndDate   ? fmtYMD(parseDateFlexible(r.EndDate))   : "";
+        return {
+          Name: r.Name||"",
+          Role: r.Role||"",
+          StartDate: s,
+          EndDate: e,
+          TenureDays: tenureDays(s, e),
+          Administration: r.Administration||"",
+          Notes: r.Notes||""
+        };
+      });
+      renderFilters();
+      attachHandlers();
+      applyFilters();
+      loading.style.display="none"; wrap.style.display="block";
+      document.getElementById("vc-pagination").style.display="flex";
+    }catch(e){
+      loading.style.display="none";
+      err.style.display="block";
+      err.textContent = "Failed to load data: " + e.message;
+    }
+  }
+
+  // kick off
+  init();
+  </script>
+</div>
