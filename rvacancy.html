@@ -165,7 +165,7 @@
         <td>${esc(r.Name)}</td>
         <td><span class="vc-pill ${r.Role==="Acting"?"act":r.Role==="Vacant"?"vac":"conf"}">${esc(r.Role)}</span></td>
         <td>${esc(r.StartDate)}</td>
-        <td>${esc(r.EndDate)}</td>
+        <td>${r.EndDate ? esc(r.EndDate) : '<em>Current</em>'}</td>
         <td style="text-align:right">${r.TenureDays??""}</td>
         <td>${esc(r.Administration)}</td>
         <td>${esc(r.Notes)}</td>
