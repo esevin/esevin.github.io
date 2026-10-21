@@ -1,21 +1,581 @@
-<!doctype html>
+
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>The House of Everyday Horrors</title>
+
 <style>
-:root{color-scheme:dark;--red:#ff583f;--gold:#d6aa70}*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 50% 15%,#30201b,#0c0b0d 72%);font-family:Georgia,serif;color:#f2d9b5;display:grid;place-items:center;padding:24px}.wrap{width:min(1050px,100%)}.sign{border:12px ridge #493025;box-shadow:0 0 0 4px #160e0c,0 18px 55px #000b,inset 0 0 35px #000;background:linear-gradient(145deg,#261a17,#110e0e);padding:clamp(14px,3vw,35px);border-radius:12px}h1{text-align:center;color:#db4e3b;text-shadow:0 2px #2e0908,0 0 20px #8e2119;font-size:clamp(27px,5vw,59px);letter-spacing:.05em;margin:0}header p{text-align:center;letter-spacing:.28em;color:#c3a58d;font:12px system-ui;margin:12px 0 27px}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.panel{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;min-height:clamp(120px,17vw,183px);padding:15px 10px;text-align:center;background:#201816;border:5px ridge #52362b;box-shadow:inset 0 0 22px #000;border-radius:4px;transition:background .16s,box-shadow .16s,color .16s}.panel .symbol{font:clamp(20px,3vw,33px) system-ui;filter:grayscale(1);opacity:.3}.panel .msg{font-family:Impact,'Arial Narrow',sans-serif;font-stretch:condensed;font-weight:800;font-size:clamp(12px,1.9vw,22px);line-height:1.25;letter-spacing:.035em;color:#7d6258}.panel.on{background:radial-gradient(ellipse,#ffac75,#ed563b 70%,#9c2a21);box-shadow:0 0 24px #f65a36a0,inset 0 0 25px #ffbc75;border-color:#a96342;animation:flare .3s ease-out}.panel.on .msg{color:#240e0a;text-shadow:0 1px #ffc2a0}.panel.on .symbol{opacity:1;filter:none}@keyframes flare{from{filter:brightness(2.3)}to{filter:brightness(1)}}.controls{display:flex;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap;margin-top:25px}button{cursor:pointer;border:2px solid #c37452;border-radius:6px;padding:13px 22px;background:#8e2c23;color:#fff3e5;font:bold 16px system-ui;letter-spacing:.03em}button:hover{background:#b53b2c}button.secondary{background:#29211e;border-color:#655044}.hint{text-align:center;font:13px system-ui;color:#aa988b;margin:16px 0 0}.status{text-align:center;font:14px system-ui;color:#efad7e;min-height:20px;margin:15px 0 0}@media(max-width:620px){.grid{gap:7px}.panel{min-height:125px;padding:8px 4px;border-width:3px}.panel .msg{font-size:clamp(11px,2.7vw,16px)}.panel .symbol{font-size:23px}.sign{border-width:7px;padding:12px}header p{letter-spacing:.12em}}
+:root {
+  --red: #ff563d;
+  --orange: #ffad70;
+  --black: #090807;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: radial-gradient(
+    ellipse at center,
+    #302019 0%,
+    #100c0b 65%,
+    #050404 100%
+  );
+  color: #f3d9c4;
+  font-family: Georgia, serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+
+.machine {
+  width: min(100%, 680px);
+  background: linear-gradient(135deg, #211916, #090807);
+  border: 8px ridge #4c3025;
+  border-radius: 12px;
+  padding: 22px;
+  box-shadow:
+    0 0 35px #000,
+    inset 0 0 25px #000;
+}
+
+header {
+  text-align: center;
+  padding: 12px 0 24px;
+}
+
+.skull {
+  font-size: 38px;
+  margin-bottom: 8px;
+}
+
+h1 {
+  margin: 0;
+  color: #e9674d;
+  font-size: clamp(24px, 5vw, 43px);
+  line-height: 1.1;
+  text-shadow: 0 0 14px #6a1a10;
+}
+
+.subtitle {
+  font-family: Arial, sans-serif;
+  font-size: 11px;
+  letter-spacing: 4px;
+  margin-top: 14px;
+  color: #a78a79;
+}
+
+.windows {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.window {
+  position: relative;
+  aspect-ratio: 1.12;
+  min-width: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  padding: 9px;
+  background: #080808;
+  border: 5px ridge #49332b;
+  border-radius: 4px;
+  box-shadow: inset 0 0 22px #000;
+  transition:
+    background 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+.window::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    130deg,
+    transparent 15%,
+    #ffffff08 35%,
+    transparent 50%
+  );
+}
+
+.message {
+  opacity: 0;
+  visibility: hidden;
+  color: #1b0905;
+  font-family: Impact, "Arial Narrow", sans-serif;
+  font-weight: 900;
+  font-size: 18px;
+  line-height: 1.15;
+  text-align: center;
+  overflow-wrap: break-word;
+  transform: scale(0.97);
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease,
+    visibility 0s linear 0.2s;
+}
+
+.window.active {
+  background: radial-gradient(
+    ellipse,
+    #ffb27b 0%,
+    #ff6547 45%,
+    #9b241b 100%
+  );
+  box-shadow:
+    0 0 18px #ff3d27aa,
+    0 0 42px #ff3d2744,
+    inset 0 0 20px #6c120c;
+  border-color: #a65a3d;
+}
+
+.window.active .message {
+  opacity: 1;
+  visibility: visible;
+  transform: scale(1);
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease,
+    visibility 0s;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 25px;
+}
+
+button {
+  border: 1px solid #a4563d;
+  background: #351711;
+  color: #ffe0cc;
+  border-radius: 5px;
+  padding: 13px 18px;
+  font-size: 13px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #67291c;
+}
+
+button:focus-visible {
+  outline: 3px solid #ffbc85;
+  outline-offset: 3px;
+}
+
+#trigger {
+  background: #a52e20;
+  border-color: #ff7855;
+  font-size: 15px;
+}
+
+#trigger:hover {
+  background: #c63d2a;
+}
+
+#status {
+  text-align: center;
+  margin-top: 18px;
+  font: 12px Arial, sans-serif;
+  letter-spacing: 1px;
+  color: #bda99d;
+  min-height: 18px;
+}
+
+.footer {
+  text-align: center;
+  margin-top: 12px;
+  font: 11px Arial, sans-serif;
+  color: #7f6b60;
+}
+
+@media (max-width: 480px) {
+  body { padding: 8px; }
+  .machine { padding: 10px; border-width: 5px; }
+  .windows { gap: 4px; }
+  .window { padding: 4px; border-width: 3px; }
+  .subtitle { letter-spacing: 2px; }
+}
 </style>
 </head>
-<body><main class="wrap"><section class="sign"><header><h1>THE HOUSE OF<br>EVERYDAY HORRORS</h1><p>ONE STEP. ONE NIGHTMARE.</p></header><div class="grid" id="grid"></div><div class="controls"><button id="trigger">👣 STEP INTO YOUR NIGHTMARE</button><button class="secondary" id="reset">RESET</button><button class="secondary" id="sound">🔇 SOUND OFF</button></div><p class="status" id="status" aria-live="polite">Waiting for the next victim…</p><p class="hint">Click the trigger or press Space. One random window lights up for 5 seconds. Fullscreen: F11.</p></section></main>
+
+<body>
+
+<main class="machine">
+  <header>
+    <div class="skull" aria-hidden="true">☠</div>
+    <h1>THE HOUSE OF<br>EVERYDAY HORRORS</h1>
+    <div class="subtitle">ONE STEP. ONE NIGHTMARE.</div>
+  </header>
+
+  <section class="windows" aria-label="Nine nightmare windows">
+    <div class="window"><div class="message"></div></div>
+    <div class="window"><div class="message"></div></div>
+    <div class="window"><div class="message"></div></div>
+    <div class="window"><div class="message"></div></div>
+    <div class="window"><div class="message"></div></div>
+    <div class="window"><div class="message"></div></div>
+    <div class="window"><div class="message"></div></div>
+    <div class="window"><div class="message"></div></div>
+    <div class="window"><div class="message"></div></div>
+  </section>
+
+  <div class="controls">
+    <button id="trigger">☠ TRIGGER A NIGHTMARE</button>
+    <button id="sound">🔊 SOUND ON</button>
+    <button id="fullscreen">⛶ FULLSCREEN</button>
+  </div>
+
+  <div id="status" role="status" aria-live="polite">
+    AWAITING YOUR NEXT VICTIM...
+  </div>
+
+  <div class="footer">
+    PRESS SPACE TO TRIGGER
+  </div>
+</main>
+
 <script>
-const horrors=[['♨','YOU LEFT THE STOVE ON.'],['🎙','YOUR MIC WAS ON THE WHOLE TIME.'],['✉','YOU CLICKED REPLY ALL.'],['♥','YOU JUST LIKED A PHOTO FROM 2017.'],['🎓','YOU JUST CALLED YOUR TEACHER MOM.'],['♫','YOUR PHONE CONNECTED TO THE BLUETOOTH SPEAKER.'],['?','SOMEONE SAYS, “REMEMBER ME?”'],['👻','YOU’RE THE ONLY ONE WEARING A COSTUME.'],['♟','IT’S TIME FOR ICEBREAKERS.']];
-const grid=document.querySelector('#grid'),status=document.querySelector('#status');let last=-1,timer=null,soundOn=false,audioCtx=null;
-horrors.forEach(([icon,msg])=>{let p=document.createElement('div');p.className='panel';p.innerHTML='<div class="symbol"></div><div class="msg"></div>';p.querySelector('.symbol').textContent=icon;p.querySelector('.msg').textContent=msg;grid.appendChild(p)});
-const panels=[...grid.children];function beep(){if(!soundOn)return;try{audioCtx??=new(window.AudioContext||window.webkitAudioContext)();let o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='sawtooth';o.frequency.setValueAtTime(240,audioCtx.currentTime);o.frequency.exponentialRampToValueAtTime(75,audioCtx.currentTime+.35);g.gain.setValueAtTime(.08,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+.45);o.connect(g).connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+.46)}catch(e){}}
-function reset(){clearTimeout(timer);panels.forEach(p=>p.classList.remove('on'));status.textContent='Waiting for the next victim…'}
-function trigger(){clearTimeout(timer);let n=Math.floor(Math.random()*(panels.length-1));if(n>=last)n++;last=n;panels.forEach((p,i)=>p.classList.toggle('on',i===n));status.textContent='YOUR NIGHTMARE HAS BEEN SELECTED.';beep();timer=setTimeout(reset,5000)}
-document.querySelector('#trigger').onclick=trigger;document.querySelector('#reset').onclick=reset;document.querySelector('#sound').onclick=e=>{soundOn=!soundOn;e.currentTarget.textContent=soundOn?'🔊 SOUND ON':'🔇 SOUND OFF'};document.addEventListener('keydown',e=>{if(e.code==='Space'&&e.target.tagName!=='BUTTON'){e.preventDefault();trigger()}});
-// Hardware integration: call window.triggerNightmare() from your sensor bridge.
-window.triggerNightmare=trigger;
-</script></body></html>
+const horrors = [
+  // Original nine
+  "YOU LEFT THE STOVE ON.",
+  "YOUR MIC WAS ON THE WHOLE TIME.",
+  "YOU CLICKED REPLY ALL.",
+  "YOU JUST LIKED A PHOTO FROM 2017.",
+  "YOU JUST CALLED YOUR TEACHER MOM.",
+  "YOUR PHONE CONNECTED TO THE BLUETOOTH SPEAKER.",
+  'SOMEONE SAYS, "REMEMBER ME?"',
+  "YOU'RE THE ONLY ONE WEARING A COSTUME.",
+  "IT'S TIME FOR ICEBREAKERS.",
+
+  // Social humiliation
+  "YOU WAVED. THEY WEREN'T WAVING AT YOU.",
+  'YOU JUST SAID "YOU TOO" TO "ENJOY YOUR MEAL."',
+  "YOU'VE BEEN CALLING THEM THE WRONG NAME FOR YEARS.",
+  "YOU WENT IN FOR A HUG. THEY WENT FOR A HANDSHAKE.",
+  "YOU JUST LAUGHED AT SOMETHING SERIOUS.",
+  "YOU SAID GOODBYE. YOU'RE WALKING THE SAME WAY.",
+  "YOU JUST REALIZED YOUR ZIPPER IS DOWN.",
+  "YOU STARTED CLAPPING. NOBODY JOINED.",
+  "YOU'RE THE ONLY ONE WHO DIDN'T GET THE JOKE.",
+  'SOMEONE JUST SAID, "YOU LOOK TIRED."',
+
+  // Digital disasters
+  "YOU SENT THE SCREENSHOT TO THE PERSON IN IT.",
+  "YOUR SCREEN IS STILL SHARING.",
+  "YOUR SEARCH HISTORY IS ON THE BIG SCREEN.",
+  "YOU ACCIDENTALLY STARTED A VIDEO CALL.",
+  "YOU SENT A HEART EMOJI TO YOUR BOSS.",
+  "YOU JUST LIKED YOUR EX'S ENGAGEMENT PHOTO.",
+  'YOUR AUTOCORRECT CHANGED "THANKS" TO "THONGS."',
+  "YOU POSTED IT TO YOUR STORY. NOT CLOSE FRIENDS.",
+  "YOU JUST SENT A VOICE NOTE TO THE GROUP CHAT.",
+  "YOUR PHONE STARTED READING YOUR TEXTS OUT LOUD.",
+
+  // Workplace and school
+  'THE MEETING STARTS WITH "LET\'S GO AROUND THE ROOM."',
+  'THE TEACHER SAYS, "FIND A PARTNER."',
+  'YOUR BOSS SAYS, "CAN YOU STAY AFTER?"',
+  "YOU FORGOT THERE WAS A PRESENTATION TODAY.",
+  "EVERYONE IS WAITING FOR YOU TO SPEAK.",
+  'YOU JUST SAID "LOVE YOU" AT THE END OF A WORK CALL.',
+  'THE PROFESSOR SAYS, "ANY VOLUNTEERS?"',
+  "YOU'VE BEEN IN THE WRONG ZOOM MEETING FOR 20 MINUTES.",
+  'YOUR EMAIL BEGINS "AS PER MY LAST EMAIL."',
+  'SOMEONE SAYS, "LET\'S DO A FUN TEAM-BUILDING ACTIVITY."',
+
+  // Domestic panic
+  "YOU HEAR THE TOILET WATER RISING.",
+  "YOU JUST REMEMBERED THE LAUNDRY IN THE WASHER.",
+  "YOUR PHONE ISN'T IN YOUR POCKET.",
+  "YOU LEFT YOUR KEYS INSIDE. THE DOOR LOCKED.",
+  "YOU HEAR GLASS BREAKING IN THE OTHER ROOM.",
+  "THE SMOKE ALARM CHIRPS AT 3 A.M.",
+  "YOU JUST REMEMBERED THE PARKING METER.",
+  "YOU FORGOT TO CANCEL THE FREE TRIAL.",
+  'YOUR CHILD SAYS, "I NEED A COSTUME TOMORROW."',
+  "YOU JUST REMEMBERED TOMORROW IS PICTURE DAY.",
+
+  // Existential embarrassment
+  'SOMEONE ASKS, "WHEN ARE YOU DUE?" YOU\'RE NOT PREGNANT.',
+  'YOU JUST SAID "HAPPY BIRTHDAY" TO THE WRONG PERSON.',
+  "YOU'VE BEEN TALKING WITH SPINACH IN YOUR TEETH.",
+  "YOUR STOMACH GROWLS DURING A MOMENT OF SILENCE.",
+  "YOU JUST REALIZED YOU'RE ON SPEAKERPHONE.",
+  'THE CASHIER SAYS, "DECLINED." THE LINE IS LONG.',
+  'YOU SAID "NICE TO MEET YOU." THEY\'RE YOUR NEIGHBOR.',
+  "YOU'RE THE ONLY ONE WHO DRESSED FORMALLY.",
+  'SOMEONE SAYS, "I HAVE A QUESTION ABOUT YOUR SEARCH HISTORY."',
+  "YOU JUST REALIZED YOU'VE BEEN TALKING TO A MUTED PHONE."
+];
+
+const windows = Array.from(
+  document.querySelectorAll(".window")
+);
+
+const triggerButton = document.getElementById("trigger");
+const soundButton = document.getElementById("sound");
+const fullscreenButton = document.getElementById("fullscreen");
+const statusElement = document.getElementById("status");
+
+let messagePool = [];
+let lastWindow = -1;
+let lastMessage = -1;
+let soundEnabled = true;
+let resetTimer = null;
+let audioContext = null;
+
+const AudioContextClass =
+  window.AudioContext || window.webkitAudioContext;
+
+// Fisher-Yates shuffle
+function shuffle(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
+}
+
+// Every message is shown once before repeating.
+// Also avoid repeating the final message across pool resets.
+function refillPool() {
+  messagePool = shuffle(
+    horrors.map((_, index) => index)
+  );
+
+  if (
+    messagePool.length > 1 &&
+    messagePool[messagePool.length - 1] === lastMessage
+  ) {
+    const first = messagePool[0];
+    messagePool[0] = messagePool[messagePool.length - 1];
+    messagePool[messagePool.length - 1] = first;
+  }
+}
+
+function nextMessageIndex() {
+  if (messagePool.length === 0) {
+    refillPool();
+  }
+
+  const index = messagePool.pop();
+  lastMessage = index;
+  return index;
+}
+
+function nextWindowIndex() {
+  let index;
+
+  do {
+    index = Math.floor(Math.random() * windows.length);
+  } while (
+    windows.length > 1 &&
+    index === lastWindow
+  );
+
+  lastWindow = index;
+  return index;
+}
+
+// Resize text so long horrors fit in their windows.
+function fitText(messageElement) {
+  const parent = messageElement.parentElement;
+  const styles = getComputedStyle(parent);
+
+  const availableWidth =
+    parent.clientWidth -
+    parseFloat(styles.paddingLeft) -
+    parseFloat(styles.paddingRight);
+
+  const availableHeight =
+    parent.clientHeight -
+    parseFloat(styles.paddingTop) -
+    parseFloat(styles.paddingBottom);
+
+  let size = 22;
+
+  messageElement.style.width = "100%";
+
+  while (size >= 9) {
+    messageElement.style.fontSize = size + "px";
+
+    if (
+      messageElement.scrollHeight <= availableHeight &&
+      messageElement.scrollWidth <= availableWidth
+    ) {
+      break;
+    }
+
+    size--;
+  }
+}
+
+async function unlockAudio() {
+  if (!soundEnabled || !AudioContextClass) return;
+
+  try {
+    if (!audioContext) {
+      audioContext = new AudioContextClass();
+    }
+
+    if (audioContext.state === "suspended") {
+      await audioContext.resume();
+    }
+  } catch (error) {
+    console.warn("Audio unavailable:", error);
+  }
+}
+
+function playTone(frequency, start, duration, type, volume) {
+  if (
+    !audioContext ||
+    audioContext.state !== "running"
+  ) return;
+
+  const oscillator = audioContext.createOscillator();
+  const gain = audioContext.createGain();
+  const now = audioContext.currentTime;
+
+  oscillator.type = type;
+  oscillator.frequency.setValueAtTime(
+    frequency, now + start
+  );
+
+  gain.gain.setValueAtTime(0.0001, now + start);
+  gain.gain.exponentialRampToValueAtTime(
+    volume, now + start + 0.02
+  );
+  gain.gain.exponentialRampToValueAtTime(
+    0.0001, now + start + duration
+  );
+
+  oscillator.connect(gain);
+  gain.connect(audioContext.destination);
+
+  oscillator.start(now + start);
+  oscillator.stop(now + start + duration + 0.02);
+}
+
+function playNightmareSound() {
+  if (!soundEnabled || !audioContext) return;
+
+  // Low ominous impact
+  playTone(90, 0, 0.65, "sawtooth", 0.12);
+  playTone(55, 0, 0.8, "sine", 0.2);
+
+  // Descending horror chime
+  playTone(440, 0.12, 0.45, "sine", 0.11);
+  playTone(330, 0.32, 0.55, "sine", 0.1);
+  playTone(220, 0.55, 0.9, "triangle", 0.12);
+}
+
+function clearWindows() {
+  windows.forEach(element => {
+    element.classList.remove("active");
+    element.querySelector(".message").textContent = "";
+  });
+}
+
+async function triggerNightmare() {
+  // Unlock browser audio from a user gesture.
+  await unlockAudio();
+
+  clearTimeout(resetTimer);
+  clearWindows();
+
+  const windowIndex = nextWindowIndex();
+  const messageIndex = nextMessageIndex();
+
+  const selectedWindow = windows[windowIndex];
+  const messageElement =
+    selectedWindow.querySelector(".message");
+
+  messageElement.textContent = horrors[messageIndex];
+  fitText(messageElement);
+
+  // Restart the reveal animation.
+  void selectedWindow.offsetWidth;
+
+  selectedWindow.classList.add("active");
+  playNightmareSound();
+
+  statusElement.textContent = "YOUR NIGHTMARE HAS ARRIVED.";
+
+  resetTimer = setTimeout(() => {
+    clearWindows();
+    statusElement.textContent =
+      "AWAITING YOUR NEXT VICTIM...";
+  }, 5000);
+}
+
+triggerButton.addEventListener("click", triggerNightmare);
+
+soundButton.addEventListener("click", async () => {
+  soundEnabled = !soundEnabled;
+
+  soundButton.textContent = soundEnabled
+    ? "🔊 SOUND ON"
+    : "🔇 SOUND OFF";
+
+  if (soundEnabled) {
+    await unlockAudio();
+    playTone(440, 0, 0.15, "sine", 0.08);
+  }
+});
+
+fullscreenButton.addEventListener("click", async () => {
+  try {
+    if (!document.fullscreenElement) {
+      await document.documentElement.requestFullscreen();
+    } else {
+      await document.exitFullscreen();
+    }
+  } catch (error) {
+    console.warn("Fullscreen unavailable:", error);
+  }
+});
+
+document.addEventListener("keydown", event => {
+  if (
+    event.code === "Space" &&
+    !event.repeat &&
+    event.target.tagName !== "BUTTON"
+  ) {
+    event.preventDefault();
+    triggerNightmare();
+  }
+});
+
+// Refit visible text if the browser window changes size.
+window.addEventListener("resize", () => {
+  const activeMessage =
+    document.querySelector(".window.active .message");
+
+  if (activeMessage) {
+    fitText(activeMessage);
+  }
+});
+
+// Optional future sensor integration:
+// Call triggerNightmare() when motion is detected.
+// Browser audio must first be unlocked by user interaction.
+</script>
+
+</body>
+</html>
